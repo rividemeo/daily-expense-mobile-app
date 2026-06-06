@@ -1,0 +1,66 @@
+import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
+import { Colors } from './colors';
+
+export const LightTheme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary: Colors.primary.main,
+    primaryContainer: Colors.primary[100],
+    secondary: Colors.primary[600],
+    secondaryContainer: Colors.primary[50],
+    background: Colors.light.background,
+    surface: Colors.light.surface,
+    surfaceVariant: Colors.grey[100],
+    error: Colors.error.main,
+    errorContainer: Colors.error.background,
+    onPrimary: Colors.white,
+    onPrimaryContainer: Colors.primary[900],
+    onBackground: Colors.light.text,
+    onSurface: Colors.light.text,
+    onSurfaceVariant: Colors.light.textSecondary,
+    outline: Colors.light.border,
+    outlineVariant: Colors.light.divider,
+    elevation: {
+      level0: 'transparent',
+      level1: Colors.white,
+      level2: Colors.grey[50],
+      level3: Colors.grey[100],
+      level4: Colors.grey[100],
+      level5: Colors.grey[200],
+    },
+  },
+  roundness: 12,
+};
+
+export const DarkTheme = {
+  ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: Colors.primary.light,
+    primaryContainer: Colors.primary[800],
+    secondary: Colors.primary[300],
+    secondaryContainer: Colors.primary[700],
+    background: Colors.dark.background,
+    surface: Colors.dark.surface,
+    surfaceVariant: '#334155',
+    error: Colors.error.light,
+    errorContainer: '#7F1D1D',
+    onPrimary: Colors.primary[900],
+    onPrimaryContainer: Colors.primary[100],
+    onBackground: Colors.dark.text,
+    onSurface: Colors.dark.text,
+    onSurfaceVariant: Colors.dark.textSecondary,
+    outline: Colors.dark.border,
+    outlineVariant: Colors.dark.divider,
+    elevation: {
+      level0: 'transparent',
+      level1: Colors.dark.surface,
+      level2: '#253044',
+      level3: '#2A3549',
+      level4: '#2D394E',
+      level5: '#303D52',
+    },
+  },
+  roundness: 12,
+};

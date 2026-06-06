@@ -1,0 +1,395 @@
+import React, { useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  TouchableOpacity,
+  Platform,
+  KeyboardAvoidingView,
+} from 'react-native';
+import { Text, SegmentedButtons, Chip } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/shared/constants/colors';
+import { Input } from '@/shared/components/ui/Input';
+import { Button } from '@/shared/components/ui/Button';
+import { CurrencyInput } from '@/shared/components/ui/CurrencyInput';
+import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
+import { useCreateTransaction } from '@/hooks/useTransactions';
+import { useAuthStore } from '@/stores/authStore';
+import { useCategoryStore } from '@/stores/categoryStore';
+import { TransactionType, PaymentMethod } from '@/types/models';
+import { formatDateInput } from '@/shared/utils/formatDate';
+import { useTheme } from '@/hooks/useTheme';
+
+const transactionSchema = z.object({
+  amount: z.string().min(1, 'Amount is required').refine((v) => parseFloat(v) > 0, 'Amount must be greater than 0'),
+  description: z.string().min(1, 'Description is required').max(100),
+  categoryId: z.string().min(1, 'Please select a category'),
+  date: z.string(),
+  notes: z.string().optional(),
+  paymentMethod: z.enum(['cash', 'credit_card', 'debit_card', 'bank_transfer', 'digital_wallet', 'other']),
+});
+
+type TransactionForm = z.infer<typeof transactionSchema>;
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
+  { value: 'cash', label: 'Cash', icon: 'cash' },
+  { value: 'credit_card', label: 'Credit', icon: 'credit-card' },
+  { value: 'debit_card', label: 'Debit', icon: 'credit-card-outline' },
+  { value: 'bank_transfer', label: 'Bank', icon: 'bank-transfer' },
+  { value: 'digital_wallet', label: 'Wallet', icon: 'wallet' },
+];
+
+export default function NewTransactionScreen() {
+  const { colors } = useTheme();
+  const user = useAuthStore((s) => s.user);
+  const [type, setType] = useState<TransactionType>('expense');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const getCategoriesByType = useCategoryStore((s) => s.getCategoriesByType);
+  const createTransaction = useCreateTransaction();
+
+  const categories = getCategoriesByType(type);
+
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<TransactionForm>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: {
+      amount: '',
+      description: '',
+      categoryId: '',
+      date: formatDateInput(new Date()),
+      notes: '',
+      paymentMethod: 'cash',
+    },
+  });
+
+  const selectedCategoryId = watch('categoryId');
+  const selectedPaymentMethod = watch('paymentMethod');
+
+  const onSubmit = (data: TransactionForm) => {
+    createTransaction.mutate(
+      {
+        amount: parseFloat(data.amount),
+        type,
+        categoryId: data.categoryId,
+        description: data.description,
+        date: data.date,
+        tags,
+        paymentMethod: data.paymentMethod,
+        notes: data.notes,
+        userId: user?.id ?? '',
+        isRecurring: false,
+      },
+      { onSuccess: () => router.back() }
+    );
+  };
+
+  const addTag = () => {
+    const trimmed = tagInput.trim().toLowerCase().replace(/\s+/g, '_');
+    if (trimmed && !tags.includes(trimmed)) {
+      setTags([...tags, trimmed]);
+    }
+    setTagInput('');
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+          <MaterialCommunityIcons name="close" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>New Transaction</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Type Toggle */}
+          <SegmentedButtons
+            value={type}
+            onValueChange={(v) => {
+              setType(v as TransactionType);
+              setValue('categoryId', '');
+            }}
+            buttons={[
+              {
+                value: 'expense',
+                label: 'Expense',
+                icon: 'arrow-up-circle',
+                checkedColor: Colors.white,
+                style: type === 'expense'
+                  ? { backgroundColor: Colors.expense }
+                  : { backgroundColor: Colors.grey[100] },
+              },
+              {
+                value: 'income',
+                label: 'Income',
+                icon: 'arrow-down-circle',
+                checkedColor: Colors.white,
+                style: type === 'income'
+                  ? { backgroundColor: Colors.income }
+                  : { backgroundColor: Colors.grey[100] },
+              },
+            ]}
+            style={styles.typeToggle}
+          />
+
+          {/* Amount */}
+          <Controller
+            control={control}
+            name="amount"
+            render={({ field: { onChange, value } }) => (
+              <CurrencyInput
+                value={value}
+                onChangeValue={onChange}
+                currency={user?.currency}
+                error={errors.amount?.message}
+                style={styles.amountInput}
+              />
+            )}
+          />
+
+          {/* Description */}
+          <Controller
+            control={control}
+            name="description"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Description"
+                value={value}
+                onChangeText={onChange}
+                leftIcon="text"
+                error={errors.description?.message}
+                style={styles.field}
+              />
+            )}
+          />
+
+          {/* Category */}
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Category</Text>
+          {errors.categoryId && (
+            <Text style={styles.fieldError}>{errors.categoryId.message}</Text>
+          )}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesRow}
+          >
+            {categories.map((cat) => (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.categoryChip,
+                  selectedCategoryId === cat.id && {
+                    backgroundColor: cat.color + '22',
+                    borderColor: cat.color,
+                  },
+                ]}
+                onPress={() => setValue('categoryId', cat.id, { shouldValidate: true })}
+              >
+                <CategoryIcon icon={cat.icon} color={cat.color} size={28} />
+                <Text
+                  style={[
+                    styles.categoryChipLabel,
+                    { color: selectedCategoryId === cat.id ? cat.color : colors.text },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Date */}
+          <Controller
+            control={control}
+            name="date"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Date"
+                value={value}
+                onChangeText={onChange}
+                leftIcon="calendar"
+                style={styles.field}
+              />
+            )}
+          />
+
+          {/* Payment Method */}
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Payment Method</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.paymentRow}>
+            {PAYMENT_METHODS.map((pm) => (
+              <TouchableOpacity
+                key={pm.value}
+                style={[
+                  styles.paymentChip,
+                  { backgroundColor: colors.surface },
+                  selectedPaymentMethod === pm.value && {
+                    backgroundColor: Colors.primary[50],
+                    borderColor: Colors.primary.main,
+                  },
+                ]}
+                onPress={() => setValue('paymentMethod', pm.value)}
+              >
+                <MaterialCommunityIcons
+                  name={pm.icon as any}
+                  size={20}
+                  color={selectedPaymentMethod === pm.value ? Colors.primary.main : colors.textSecondary}
+                />
+                <Text
+                  style={[
+                    styles.paymentLabel,
+                    { color: selectedPaymentMethod === pm.value ? Colors.primary.main : colors.textSecondary },
+                  ]}
+                >
+                  {pm.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* Tags */}
+          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Tags</Text>
+          <View style={styles.tagInputRow}>
+            <Input
+              label="Add tag"
+              value={tagInput}
+              onChangeText={setTagInput}
+              style={styles.tagInput}
+            />
+            <TouchableOpacity onPress={addTag} style={styles.tagAddBtn}>
+              <MaterialCommunityIcons name="plus" size={22} color={Colors.primary.main} />
+            </TouchableOpacity>
+          </View>
+          {tags.length > 0 && (
+            <View style={styles.tagsList}>
+              {tags.map((tag) => (
+                <Chip
+                  key={tag}
+                  onClose={() => setTags(tags.filter((t) => t !== tag))}
+                  style={styles.tagChip}
+                  compact
+                >
+                  #{tag}
+                </Chip>
+              ))}
+            </View>
+          )}
+
+          {/* Notes */}
+          <Controller
+            control={control}
+            name="notes"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Notes (optional)"
+                value={value ?? ''}
+                onChangeText={onChange}
+                multiline
+                numberOfLines={3}
+                leftIcon="note-text-outline"
+                style={styles.field}
+              />
+            )}
+          />
+
+          <Button
+            onPress={handleSubmit(onSubmit)}
+            loading={createTransaction.isPending}
+            fullWidth
+            size="large"
+            style={styles.submitBtn}
+            color={type === 'expense' ? 'error' : 'success'}
+          >
+            {type === 'expense' ? 'Record Expense' : 'Record Income'}
+          </Button>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  flex: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.grey[100],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: { fontSize: 18, fontWeight: '700' },
+  content: { padding: 16, gap: 16, paddingBottom: 40 },
+  typeToggle: { borderRadius: 12 },
+  amountInput: {},
+  field: {},
+  fieldLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  fieldError: { color: Colors.error.main, fontSize: 12, marginTop: -8, marginBottom: 4 },
+  categoriesRow: { gap: 10, paddingBottom: 4 },
+  categoryChip: {
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.grey[200],
+    width: 72,
+    gap: 6,
+  },
+  categoryChipLabel: { fontSize: 10, textAlign: 'center', fontWeight: '500' },
+  paymentRow: { gap: 10, paddingBottom: 4 },
+  paymentChip: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.grey[200],
+    gap: 4,
+    minWidth: 72,
+  },
+  paymentLabel: { fontSize: 11, fontWeight: '500' },
+  tagInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tagInput: { flex: 1 },
+  tagAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.primary.main,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  tagsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tagChip: { backgroundColor: Colors.primary[50] },
+  submitBtn: {},
+});

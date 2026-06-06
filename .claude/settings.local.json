@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-expo-app@latest . --template blank-typescript)",
+      "Bash(npm --version)",
+      "Bash(where node *)",
+      "Bash(nvm list *)",
+      "PowerShell(Get-Command nvm -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command fnm -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Command volta -ErrorAction SilentlyContinue)",
+      "Bash(nvm install *)",
+      "Bash(nvm use *)",
+      "PowerShell(nvm install 20.11.0 2>&1)",
+      "PowerShell(nvm use 20.11.0 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\nvm.exe\" install 20.11.0)",
+      "PowerShell(& \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\nvm.exe\" list)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; Set-Location \"c:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx expo install expo-router expo-splash-screen expo-font expo-constants expo-linear-gradient expo-secure-store expo-sqlite expo-image-picker expo-image expo-file-system expo-sharing expo-document-picker expo-notifications react-native-screens react-native-safe-area-context react-native-reanimated react-native-gesture-handler react-native-svg \"@react-native-async-storage/async-storage\" \"@expo/vector-icons\" 2>&1 | Select-Object -Last 20)"
+    ]
+  }
+}

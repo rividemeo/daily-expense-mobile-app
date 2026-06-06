@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; Set-Location \"c:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx tsc --noEmit 2>&1 | Select-Object -First 40)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; Set-Location \"c:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx expo start 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; Set-Location \"c:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; node -e \"const p = require\\('./node_modules/react-native-reanimated/package.json'\\); console.log\\(JSON.stringify\\(p.peerDependencies, null, 2\\)\\);\")",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; Set-Location \"c:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npm install react-native-worklets@0.8.x --legacy-peer-deps 2>&1 | Select-Object -Last 10)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; Set-Location \"c:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; node -e \"const p = require\\('./node_modules/react-native-worklets/package.json'\\); console.log\\('react-native-worklets:', p.version\\);\")",
+      "PowerShell($proc = Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue | Select-Object -First 1; if \\($proc\\) { Stop-Process -Id $proc.OwningProcess -Force -ErrorAction SilentlyContinue; \"Killed PID $\\($proc.OwningProcess\\)\" } else { \"Port 8081 is free\" })",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; cd \"C:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx tsc --noEmit 2>&1 | Select-Object -First 60)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Write-Host \"Done\")",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; cd \"C:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx expo start --web --non-interactive 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; cd \"C:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx expo install react-dom react-native-web 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; $env:CI = \"1\"; cd \"C:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx expo start --web 2>&1)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }; Write-Host \"Killed\")",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; $env:CI = \"1\"; cd \"C:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx expo start --web --clear 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Users\\\\Rividemeo\\\\AppData\\\\Roaming\\\\nvm\\\\v22.11.0;$env:PATH\"; cd \"C:\\\\Users\\\\Rividemeo\\\\Documents\\\\GitHub\\\\daily-expense-mobile-app\"; npx expo start --web --clear 2>&1)"
+    ]
+  }
+}
