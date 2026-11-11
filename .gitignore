@@ -22,3 +22,8 @@ temp-expo/
 
 expo-env.d.ts
 # @end expo-cli
+# Bank statements and exports never go in the repo (it is public).
+*.pdf
+*.csv
+*.xlsx
+imports/
