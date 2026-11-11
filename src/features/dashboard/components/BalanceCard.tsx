@@ -2,8 +2,8 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -21,142 +21,101 @@ export function BalanceCard({
   onAddPress,
 }: BalanceCardProps) {
   const currency = useAuthStore((s) => s.user?.currency ?? 'IDR');
+  const { colors } = useTheme();
+  const muted = { color: colors.onHeroMuted };
+  const strong = { color: colors.onHero };
 
   return (
-    <LinearGradient
-      colors={[Colors.primary[800], Colors.primary[600]]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
-      <View style={styles.decorCircle1} />
-      <View style={styles.decorCircle2} />
-
+    <View style={[styles.container, { backgroundColor: colors.hero }]}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.balanceLabel}>Total Balance</Text>
-          <Text style={styles.balanceAmount}>
+          <Text style={[styles.balanceLabel, muted]}>Total Balance</Text>
+          <Text style={[styles.balanceAmount, strong]}>
             {formatCurrency(balance, currency)}
           </Text>
         </View>
-        <TouchableOpacity onPress={onAddPress} style={styles.addButton}>
-          <MaterialCommunityIcons name="plus" size={24} color={Colors.white} />
+        <TouchableOpacity
+          onPress={onAddPress}
+          style={styles.addButton}
+          accessibilityRole="button"
+          accessibilityLabel="Add transaction"
+        >
+          <MaterialCommunityIcons name="plus" size={24} color={colors.onHero} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <View style={styles.statIcon}>
-            <MaterialCommunityIcons name="arrow-down-circle" size={20} color={Colors.success.light} />
+          <View style={styles.statLabelRow}>
+            <MaterialCommunityIcons name="arrow-bottom-left" size={14} color={colors.onHeroMuted} />
+            <Text style={[styles.statLabel, muted]}>Income</Text>
           </View>
-          <View>
-            <Text style={styles.statLabel}>Income</Text>
-            <Text style={styles.statValue}>
-              {formatCurrency(monthlyIncome, currency, { compact: true })}
-            </Text>
-          </View>
+          <Text style={[styles.statValue, strong]}>
+            {formatCurrency(monthlyIncome, currency, { compact: true })}
+          </Text>
         </View>
 
-        <View style={styles.statDivider} />
+        <View style={[styles.statDivider, { backgroundColor: colors.onHeroMuted }]} />
 
         <View style={styles.statItem}>
-          <View style={styles.statIcon}>
-            <MaterialCommunityIcons name="arrow-up-circle" size={20} color={Colors.error.light} />
+          <View style={styles.statLabelRow}>
+            <MaterialCommunityIcons name="arrow-top-right" size={14} color={colors.onHeroMuted} />
+            <Text style={[styles.statLabel, muted]}>Expenses</Text>
           </View>
-          <View>
-            <Text style={styles.statLabel}>Expenses</Text>
-            <Text style={styles.statValue}>
-              {formatCurrency(monthlyExpenses, currency, { compact: true })}
-            </Text>
-          </View>
+          <Text style={[styles.statValue, strong]}>
+            {formatCurrency(monthlyExpenses, currency, { compact: true })}
+          </Text>
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 24,
-    padding: 24,
-    marginHorizontal: 16,
-    overflow: 'hidden',
-    elevation: 8,
-    shadowColor: Colors.primary.main,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-  },
-  decorCircle1: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    top: -60,
-    right: -60,
-  },
-  decorCircle2: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    bottom: -30,
-    left: 20,
+    borderRadius: Radius.lg,
+    padding: Space.xl,
+    marginHorizontal: Space.lg,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: Space.xl,
   },
   balanceLabel: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 14,
-    marginBottom: 4,
+    ...Type.body,
+    marginBottom: Space.xs,
   },
   balanceAmount: {
-    color: Colors.white,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: -0.5,
+    ...Type.display,
   },
   addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: TOUCH,
+    height: TOUCH,
+    borderRadius: TOUCH / 2,
+    backgroundColor: 'rgba(255,255,255,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   statsRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
+    alignItems: 'stretch',
   },
   statItem: {
     flex: 1,
+  },
+  statLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Space.xs,
+    marginBottom: 2,
   },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  statLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 12 },
-  statValue: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+  statLabel: { ...Type.caption },
+  statValue: { ...Type.bodyLg, fontWeight: '600' },
   statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    marginHorizontal: 8,
+    width: StyleSheet.hairlineWidth,
+    opacity: 0.4,
+    marginHorizontal: Space.lg,
   },
 });

@@ -20,6 +20,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useTheme } from '@/hooks/useTheme';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { CATEGORY_ICONS } from '@/shared/constants/categories';
 import { Category, TransactionType } from '@/types/models';
 
@@ -84,11 +85,16 @@ export default function CategoriesScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Categories</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: TOUCH }} />
       </View>
 
       <View style={styles.typeToggle}>
@@ -109,15 +115,18 @@ export default function CategoriesScreen() {
         contentContainerStyle={styles.grid}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.catCard, { backgroundColor: colors.surface }]}
+            style={[styles.catCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
             onLongPress={() => handleDelete(item)}
+            accessibilityRole="button"
+            accessibilityLabel={item.name}
+            accessibilityHint="Long press to delete"
           >
             <CategoryIcon icon={item.icon} color={item.color} size={52} />
             <Text style={[styles.catName, { color: colors.text }]} numberOfLines={1}>
               {item.name}
             </Text>
             {item.isDefault && (
-              <Text style={styles.defaultBadge}>Default</Text>
+              <Text style={[styles.defaultBadge, { color: colors.textTertiary }]}>Default</Text>
             )}
           </TouchableOpacity>
         )}
@@ -151,8 +160,12 @@ export default function CategoriesScreen() {
             {Colors.categoryColors.map((c) => (
               <TouchableOpacity
                 key={c}
-                style={[styles.colorDot, { backgroundColor: c }, selectedColor === c && styles.colorDotSelected]}
+                style={[styles.colorDot, { backgroundColor: c }, selectedColor === c && [styles.colorDotSelected, { borderColor: colors.text }]]}
                 onPress={() => { setSelectedColor(c); setValue('color', c); }}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={`Colour ${c}`}
+                accessibilityState={{ selected: selectedColor === c }}
               />
             ))}
           </View>
@@ -162,8 +175,11 @@ export default function CategoriesScreen() {
             {CATEGORY_ICONS.slice(0, 20).map((icon) => (
               <TouchableOpacity
                 key={icon}
-                style={[styles.iconItem, selectedIcon === icon && { backgroundColor: selectedColor + '22', borderColor: selectedColor }]}
+                style={[styles.iconItem, { borderColor: colors.border }, selectedIcon === icon && { backgroundColor: selectedColor + '22', borderColor: selectedColor }]}
                 onPress={() => { setSelectedIcon(icon); setValue('icon', icon); }}
+                accessibilityRole="button"
+                accessibilityLabel={`Icon ${icon}`}
+                accessibilityState={{ selected: selectedIcon === icon }}
               >
                 <MaterialCommunityIcons name={icon as any} size={24} color={selectedIcon === icon ? selectedColor : colors.textSecondary} />
               </TouchableOpacity>
@@ -185,39 +201,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.grey[100], alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '700' },
-  typeToggle: { paddingHorizontal: 16, marginBottom: 16 },
-  grid: { padding: 12, gap: 8 },
+  backBtn: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  title: { ...Type.title },
+  typeToggle: { paddingHorizontal: Space.lg, marginBottom: Space.lg },
+  grid: { padding: Space.md, gap: Space.sm },
   catCard: {
     flex: 1,
-    margin: 4,
-    borderRadius: 16,
-    padding: 16,
+    margin: Space.xs,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    padding: Space.lg,
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
     minHeight: 100,
   },
-  catName: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
-  defaultBadge: { fontSize: 10, color: Colors.grey[400] },
-  fab: { position: 'absolute', bottom: 24, right: 20, backgroundColor: Colors.primary.main },
-  modal: { margin: 16, borderRadius: 20, padding: 20 },
-  modalTitle: { fontSize: 20, fontWeight: '700', marginBottom: 16 },
-  field: { marginBottom: 12 },
-  fieldLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
-  colorDot: { width: 32, height: 32, borderRadius: 16 },
-  colorDotSelected: { borderWidth: 3, borderColor: Colors.grey[800] },
-  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  catName: { ...Type.caption, fontWeight: '600', textAlign: 'center' },
+  defaultBadge: { ...Type.caption },
+  fab: { position: 'absolute', bottom: Space.xl, right: Space.lg, backgroundColor: Colors.primary.main },
+  modal: { margin: Space.lg, borderRadius: Radius.lg, padding: Space.xl },
+  modalTitle: { ...Type.title, marginBottom: Space.lg },
+  field: { marginBottom: Space.md },
+  fieldLabel: { ...Type.body, fontWeight: '600', marginBottom: Space.sm },
+  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.md, marginBottom: Space.lg },
+  colorDot: { width: 32, height: 32, borderRadius: Radius.pill },
+  colorDotSelected: { borderWidth: 3 },
+  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm, marginBottom: Space.lg },
   iconItem: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: TOUCH,
+    height: TOUCH,
+    borderRadius: Radius.md,
     borderWidth: 1.5,
-    borderColor: Colors.grey[200],
     alignItems: 'center',
     justifyContent: 'center',
   },

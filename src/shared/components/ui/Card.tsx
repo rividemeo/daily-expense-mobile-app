@@ -1,19 +1,23 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Surface } from 'react-native-paper';
+import { Space, Radius } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
   onPress?: () => void;
+  /** Ignored: cards are flat. Kept so existing callers still type-check. */
   elevation?: 0 | 1 | 2 | 3 | 4 | 5;
   padding?: number;
 }
 
 const AnimatedSurface = Animated.createAnimatedComponent(Surface);
 
-export function Card({ children, style, onPress, elevation = 1, padding = 16 }: CardProps) {
+export function Card({ children, style, onPress, padding = Space.lg }: CardProps) {
+  const { colors } = useTheme();
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -30,7 +34,7 @@ export function Card({ children, style, onPress, elevation = 1, padding = 16 }: 
 
   if (onPress) {
     return (
-      <AnimatedSurface elevation={elevation} style={[styles.surface, animatedStyle, style]}>
+      <AnimatedSurface elevation={0} style={[styles.surface, { backgroundColor: colors.surface }, animatedStyle, style]}>
         <TouchableOpacity
           onPress={onPress}
           onPressIn={handlePressIn}
@@ -45,7 +49,7 @@ export function Card({ children, style, onPress, elevation = 1, padding = 16 }: 
   }
 
   return (
-    <Surface elevation={elevation} style={[styles.surface, style]}>
+    <Surface elevation={0} style={[styles.surface, { backgroundColor: colors.surface }, style]}>
       <View style={{ padding }}>{children}</View>
     </Surface>
   );
@@ -53,7 +57,7 @@ export function Card({ children, style, onPress, elevation = 1, padding = 16 }: 
 
 const styles = StyleSheet.create({
   surface: {
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
   },
 });

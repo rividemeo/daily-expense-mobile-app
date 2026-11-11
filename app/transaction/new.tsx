@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
 import { CurrencyInput } from '@/shared/components/ui/CurrencyInput';
@@ -46,7 +47,7 @@ const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] =
 ];
 
 export default function NewTransactionScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const [type, setType] = useState<TransactionType>('expense');
   const [tags, setTags] = useState<string[]>([]);
@@ -107,11 +108,16 @@ export default function NewTransactionScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.closeBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Close"
+        >
           <MaterialCommunityIcons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>New Transaction</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: TOUCH }} />
       </View>
 
       <KeyboardAvoidingView
@@ -136,18 +142,20 @@ export default function NewTransactionScreen() {
                 label: 'Expense',
                 icon: 'arrow-up-circle',
                 checkedColor: Colors.white,
+                uncheckedColor: colors.textSecondary,
                 style: type === 'expense'
                   ? { backgroundColor: Colors.expense }
-                  : { backgroundColor: Colors.grey[100] },
+                  : { backgroundColor: colors.surfaceAlt },
               },
               {
                 value: 'income',
                 label: 'Income',
                 icon: 'arrow-down-circle',
                 checkedColor: Colors.white,
+                uncheckedColor: colors.textSecondary,
                 style: type === 'income'
                   ? { backgroundColor: Colors.income }
-                  : { backgroundColor: Colors.grey[100] },
+                  : { backgroundColor: colors.surfaceAlt },
               },
             ]}
             style={styles.typeToggle}
@@ -187,7 +195,7 @@ export default function NewTransactionScreen() {
           {/* Category */}
           <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Category</Text>
           {errors.categoryId && (
-            <Text style={styles.fieldError}>{errors.categoryId.message}</Text>
+            <Text style={[styles.fieldError, { color: isDark ? Colors.error.light : Colors.error.main }]}>{errors.categoryId.message}</Text>
           )}
           <ScrollView
             horizontal
@@ -199,12 +207,15 @@ export default function NewTransactionScreen() {
                 key={cat.id}
                 style={[
                   styles.categoryChip,
+                  { borderColor: colors.border },
                   selectedCategoryId === cat.id && {
-                    backgroundColor: cat.color + '22',
+                    backgroundColor: cat.color + '1F',
                     borderColor: cat.color,
                   },
                 ]}
                 onPress={() => setValue('categoryId', cat.id, { shouldValidate: true })}
+                accessibilityRole="button"
+                accessibilityLabel={cat.name}
               >
                 <CategoryIcon icon={cat.icon} color={cat.color} size={28} />
                 <Text
@@ -243,23 +254,25 @@ export default function NewTransactionScreen() {
                 key={pm.value}
                 style={[
                   styles.paymentChip,
-                  { backgroundColor: colors.surface },
+                  { backgroundColor: colors.surface, borderColor: colors.border },
                   selectedPaymentMethod === pm.value && {
-                    backgroundColor: Colors.primary[50],
-                    borderColor: Colors.primary.main,
+                    backgroundColor: accent + '1F',
+                    borderColor: accent,
                   },
                 ]}
                 onPress={() => setValue('paymentMethod', pm.value)}
+                accessibilityRole="button"
+                accessibilityLabel={pm.label}
               >
                 <MaterialCommunityIcons
                   name={pm.icon as any}
                   size={20}
-                  color={selectedPaymentMethod === pm.value ? Colors.primary.main : colors.textSecondary}
+                  color={selectedPaymentMethod === pm.value ? accent : colors.textSecondary}
                 />
                 <Text
                   style={[
                     styles.paymentLabel,
-                    { color: selectedPaymentMethod === pm.value ? Colors.primary.main : colors.textSecondary },
+                    { color: selectedPaymentMethod === pm.value ? accent : colors.textSecondary },
                   ]}
                 >
                   {pm.label}
@@ -277,8 +290,13 @@ export default function NewTransactionScreen() {
               onChangeText={setTagInput}
               style={styles.tagInput}
             />
-            <TouchableOpacity onPress={addTag} style={styles.tagAddBtn}>
-              <MaterialCommunityIcons name="plus" size={22} color={Colors.primary.main} />
+            <TouchableOpacity
+              onPress={addTag}
+              style={[styles.tagAddBtn, { borderColor: accent }]}
+              accessibilityRole="button"
+              accessibilityLabel="Add tag"
+            >
+              <MaterialCommunityIcons name="plus" size={22} color={accent} />
             </TouchableOpacity>
           </View>
           {tags.length > 0 && (
@@ -287,7 +305,7 @@ export default function NewTransactionScreen() {
                 <Chip
                   key={tag}
                   onClose={() => setTags(tags.filter((t) => t !== tag))}
-                  style={styles.tagChip}
+                  style={[styles.tagChip, { backgroundColor: colors.surfaceAlt }]}
                   compact
                 >
                   #{tag}
@@ -336,60 +354,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
   closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
+    width: TOUCH,
+    height: TOUCH,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  content: { padding: 16, gap: 16, paddingBottom: 40 },
-  typeToggle: { borderRadius: 12 },
+  headerTitle: { ...Type.title, fontWeight: '700' },
+  content: { padding: Space.lg, gap: Space.lg, paddingBottom: Space.xxl + Space.sm },
+  typeToggle: { borderRadius: Radius.md },
   amountInput: {},
   field: {},
-  fieldLabel: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
-  fieldError: { color: Colors.error.main, fontSize: 12, marginTop: -8, marginBottom: 4 },
-  categoriesRow: { gap: 10, paddingBottom: 4 },
+  fieldLabel: { ...Type.body, fontWeight: '600', marginBottom: Space.sm },
+  fieldError: { ...Type.caption, marginTop: -Space.sm, marginBottom: Space.xs },
+  categoriesRow: { gap: Space.sm, paddingBottom: Space.xs },
   categoryChip: {
     alignItems: 'center',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.grey[200],
+    padding: Space.sm,
+    borderRadius: Radius.md,
+    borderWidth: 1,
     width: 72,
-    gap: 6,
+    gap: Space.xs,
   },
-  categoryChipLabel: { fontSize: 10, textAlign: 'center', fontWeight: '500' },
-  paymentRow: { gap: 10, paddingBottom: 4 },
+  categoryChipLabel: { ...Type.caption, textAlign: 'center', fontWeight: '500' },
+  paymentRow: { gap: Space.sm, paddingBottom: Space.xs },
   paymentChip: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.grey[200],
-    gap: 4,
+    padding: Space.md,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    gap: Space.xs,
     minWidth: 72,
   },
-  paymentLabel: { fontSize: 11, fontWeight: '500' },
-  tagInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  paymentLabel: { ...Type.caption, fontWeight: '500' },
+  tagInputRow: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
   tagInput: { flex: 1 },
   tagAddBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.primary.main,
+    width: TOUCH,
+    height: TOUCH,
+    borderRadius: Radius.md,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: Space.xs,
   },
-  tagsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tagChip: { backgroundColor: Colors.primary[50] },
+  tagsList: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
+  tagChip: {},
   submitBtn: {},
 });

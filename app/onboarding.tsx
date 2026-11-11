@@ -10,9 +10,10 @@ import {
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { setOnboardingDone } from '@/services/storage/secureStorage';
 import { useAuthStore } from '@/stores/authStore';
 import { Button } from '@/shared/components/ui/Button';
@@ -24,7 +25,6 @@ interface OnboardingSlide {
   icon: string;
   title: string;
   description: string;
-  gradient: [string, string];
 }
 
 const SLIDES: OnboardingSlide[] = [
@@ -33,28 +33,24 @@ const SLIDES: OnboardingSlide[] = [
     icon: 'wallet-outline',
     title: 'Track Every\nExpense',
     description: 'Record your daily income and expenses with ease. Know exactly where your money is going.',
-    gradient: [Colors.primary[700], Colors.primary[500]],
   },
   {
     id: '2',
     icon: 'chart-donut',
     title: 'Smart Budget\nManagement',
     description: 'Set budgets for different categories and get alerts before you overspend.',
-    gradient: ['#7C3AED', '#A855F7'],
   },
   {
     id: '3',
     icon: 'shield-lock-outline',
     title: 'Private &\nOffline First',
     description: 'All your financial data stays on your device. No account needed, no data sent to servers.',
-    gradient: ['#0F766E', '#14B8A6'],
   },
   {
     id: '4',
     icon: 'chart-areaspline',
     title: 'Insightful\nReports',
     description: 'Beautiful charts and detailed reports to understand your financial health at a glance.',
-    gradient: ['#B45309', '#F59E0B'],
   },
 ];
 
@@ -62,6 +58,7 @@ export default function OnboardingScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const { setOnboardingCompleted } = useAuthStore();
+  const { colors, accent, isDark } = useTheme();
 
   const finish = async () => {
     await setOnboardingDone();
@@ -78,20 +75,20 @@ export default function OnboardingScreen() {
   };
 
   const renderSlide: ListRenderItem<OnboardingSlide> = ({ item }) => (
-    <LinearGradient colors={item.gradient} style={styles.slide}>
+    <View style={styles.slide}>
       <View style={styles.slideContent}>
-        <View style={styles.iconWrapper}>
-          <MaterialCommunityIcons name={item.icon as any} size={80} color={Colors.white} />
+        <View style={[styles.iconWrapper, { backgroundColor: colors.surfaceAlt }]}>
+          <MaterialCommunityIcons name={item.icon as any} size={64} color={accent} />
         </View>
-        <Text style={styles.slideTitle}>{item.title}</Text>
-        <Text style={styles.slideDescription}>{item.description}</Text>
+        <Text style={[styles.slideTitle, { color: colors.text }]}>{item.title}</Text>
+        <Text style={[styles.slideDescription, { color: colors.textSecondary }]}>{item.description}</Text>
       </View>
-    </LinearGradient>
+    </View>
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <FlatList
         ref={flatListRef}
         data={SLIDES}
@@ -107,8 +104,8 @@ export default function OnboardingScreen() {
       />
 
       <View style={styles.footer}>
-        <TouchableOpacity onPress={finish} style={styles.skipButton}>
-          <Text style={styles.skipText}>
+        <TouchableOpacity onPress={finish} style={styles.skipButton} accessibilityRole="button">
+          <Text style={[styles.skipText, { color: colors.textSecondary }]}>
             {activeIndex === SLIDES.length - 1 ? '' : 'Skip'}
           </Text>
         </TouchableOpacity>
@@ -121,14 +118,19 @@ export default function OnboardingScreen() {
                 styles.dot,
                 {
                   width: i === activeIndex ? 24 : 8,
-                  backgroundColor: i === activeIndex ? Colors.primary.main : Colors.grey[300],
+                  backgroundColor: i === activeIndex ? accent : colors.track,
                 },
               ]}
             />
           ))}
         </View>
 
-        <TouchableOpacity onPress={handleNext} style={styles.nextButton}>
+        <TouchableOpacity
+          onPress={handleNext}
+          style={styles.nextButton}
+          accessibilityRole="button"
+          accessibilityLabel={activeIndex === SLIDES.length - 1 ? 'Get started' : 'Next'}
+        >
           <MaterialCommunityIcons
             name={activeIndex === SLIDES.length - 1 ? 'check' : 'arrow-right'}
             size={24}
@@ -141,44 +143,38 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.light.background },
+  container: { flex: 1 },
   slide: { width, height: height - 120, alignItems: 'center', justifyContent: 'center' },
-  slideContent: { alignItems: 'center', paddingHorizontal: 40 },
+  slideContent: { alignItems: 'center', paddingHorizontal: Space.xxl },
   iconWrapper: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 128,
+    height: 128,
+    borderRadius: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: Space.xxl,
   },
   slideTitle: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: Colors.white,
+    ...Type.display,
     textAlign: 'center',
-    lineHeight: 42,
-    marginBottom: 16,
+    marginBottom: Space.lg,
   },
   slideDescription: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.85)',
+    ...Type.bodyLg,
     textAlign: 'center',
-    lineHeight: 26,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingHorizontal: Space.xl,
+    paddingVertical: Space.xl,
     height: 120,
   },
-  skipButton: { width: 60 },
-  skipText: { color: Colors.grey[500], fontSize: 15 },
-  dots: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  dot: { height: 8, borderRadius: 4 },
+  skipButton: { width: 60, minHeight: TOUCH, justifyContent: 'center' },
+  skipText: { ...Type.body },
+  dots: { flexDirection: 'row', gap: Space.sm, alignItems: 'center' },
+  dot: { height: 8, borderRadius: Radius.pill },
   nextButton: {
     width: 52,
     height: 52,
@@ -186,10 +182,5 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary.main,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: Colors.primary.main,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
 });

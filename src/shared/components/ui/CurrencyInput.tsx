@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { TextInput, Text, HelperText } from 'react-native-paper';
-import { Colors } from '@/shared/constants/colors';
+import { Radius, Type } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { getCurrencyByCode } from '@/shared/constants/currencies';
 
 interface CurrencyInputProps {
@@ -22,6 +23,7 @@ export function CurrencyInput({
   style,
 }: CurrencyInputProps) {
   const currencyInfo = getCurrencyByCode(currency);
+  const { accent } = useTheme();
 
   const handleChange = (text: string) => {
     const cleaned = text.replace(/[^0-9.]/g, '');
@@ -43,7 +45,7 @@ export function CurrencyInput({
         left={
           <TextInput.Affix
             text={currencyInfo.symbol}
-            textStyle={{ fontSize: 18, fontWeight: '700', color: Colors.primary.main }}
+            textStyle={{ ...Type.title, fontWeight: '700', color: accent }}
           />
         }
         style={styles.input}
@@ -62,14 +64,14 @@ export function CurrencyInput({
 const styles = StyleSheet.create({
   input: {
     backgroundColor: 'transparent',
-    fontSize: 24,
+    fontSize: Type.headline.fontSize,
     fontWeight: '700',
   },
   outline: {
-    borderRadius: 12,
+    borderRadius: Radius.md,
   },
   content: {
-    fontSize: 24,
+    fontSize: Type.headline.fontSize,
     fontWeight: '700',
   },
 });

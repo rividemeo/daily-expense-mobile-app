@@ -11,6 +11,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
@@ -25,7 +26,7 @@ import { Transaction } from '@/types/models';
 
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
   const transactions = useTransactionStore((s) => s.transactions);
   const getCategoryById = useCategoryStore((s) => s.getCategoryById);
   const currency = useAuthStore((s) => s.user?.currency ?? 'IDR');
@@ -72,15 +73,22 @@ export default function TransactionDetailScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.iconBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Transaction Details</Text>
         <TouchableOpacity
           onPress={() => router.push(`/transaction/edit/${id}`)}
-          style={styles.editBtn}
+          style={[styles.iconBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Edit transaction"
         >
-          <MaterialCommunityIcons name="pencil-outline" size={22} color={Colors.primary.main} />
+          <MaterialCommunityIcons name="pencil-outline" size={22} color={accent} />
         </TouchableOpacity>
       </View>
 
@@ -89,18 +97,22 @@ export default function TransactionDetailScreen() {
         <View
           style={[
             styles.hero,
-            { backgroundColor: isIncome ? Colors.success.background : Colors.error.background },
+            { backgroundColor: isIncome
+                ? (isDark ? 'rgba(74,222,128,0.12)' : Colors.success.background)
+                : (isDark ? 'rgba(248,113,113,0.12)' : Colors.error.background) },
           ]}
         >
           <CategoryIcon
             icon={category?.icon ?? 'help-circle'}
-            color={category?.color ?? Colors.grey[400]}
+            color={category?.color ?? colors.textTertiary}
             size={64}
           />
           <Text
             style={[
               styles.heroAmount,
-              { color: isIncome ? Colors.success.main : Colors.error.main },
+              { color: isIncome
+                ? (isDark ? Colors.success.light : Colors.success.main)
+                : (isDark ? Colors.error.light : Colors.error.main) },
             ]}
           >
             {isIncome ? '+' : '-'}{formatCurrency(transaction.amount, currency)}
@@ -115,7 +127,7 @@ export default function TransactionDetailScreen() {
         </View>
 
         {/* Details */}
-        <View style={styles.details}>
+        <View style={[styles.details, { backgroundColor: colors.surface }]}>
           <DetailRow label="Category" value={category?.name ?? 'Unknown'} icon="tag-outline" colors={colors} />
           <DetailRow label="Date" value={formatFullDate(transaction.date)} icon="calendar" colors={colors} />
           <DetailRow label="Payment Method" value={formatPaymentMethod(transaction.paymentMethod)} icon="credit-card-outline" colors={colors} />
@@ -123,14 +135,14 @@ export default function TransactionDetailScreen() {
             <DetailRow label="Notes" value={transaction.notes} icon="note-text-outline" colors={colors} />
           )}
           {transaction.tags.length > 0 && (
-            <View style={styles.detailRow}>
+            <View style={[styles.detailRow, { borderBottomColor: colors.divider }]}>
               <MaterialCommunityIcons name="tag-multiple" size={20} color={colors.textSecondary} />
               <View style={styles.detailContent}>
                 <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Tags</Text>
                 <View style={styles.tagsRow}>
                   {transaction.tags.map((tag) => (
-                    <View key={tag} style={styles.tag}>
-                      <Text style={styles.tagText}>#{tag}</Text>
+                    <View key={tag} style={[styles.tag, { backgroundColor: colors.surfaceAlt }]}>
+                      <Text style={[styles.tagText, { color: accent }]}>#{tag}</Text>
                     </View>
                   ))}
                 </View>
@@ -183,7 +195,7 @@ function DetailRow({
   colors: any;
 }) {
   return (
-    <View style={styles.detailRow}>
+    <View style={[styles.detailRow, { borderBottomColor: colors.divider }]}>
       <MaterialCommunityIcons name={icon as any} size={20} color={colors.textSecondary} />
       <View style={styles.detailContent}>
         <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{label}</Text>
@@ -199,73 +211,61 @@ function formatPaymentMethod(method: string): string {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  notFound: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Space.lg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
+  iconBtn: {
+    width: TOUCH,
+    height: TOUCH,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  editBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary[50],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  headerTitle: { ...Type.title, fontWeight: '700' },
   hero: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    gap: 12,
-    marginHorizontal: 16,
-    borderRadius: 20,
-    marginBottom: 16,
+    paddingVertical: Space.xxl,
+    paddingHorizontal: Space.xl,
+    gap: Space.md,
+    marginHorizontal: Space.lg,
+    borderRadius: Radius.lg,
+    marginBottom: Space.lg,
   },
-  heroAmount: { fontSize: 36, fontWeight: '800' },
-  heroDescription: { fontSize: 18, fontWeight: '600', textAlign: 'center' },
+  heroAmount: { ...Type.display },
+  heroDescription: { ...Type.title, textAlign: 'center' },
   details: {
-    marginHorizontal: 16,
-    backgroundColor: Colors.white,
-    borderRadius: 16,
+    marginHorizontal: Space.lg,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
-    marginBottom: 16,
+    marginBottom: Space.lg,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    padding: 16,
-    gap: 12,
+    padding: Space.lg,
+    gap: Space.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.grey[100],
   },
   detailContent: { flex: 1 },
-  detailLabel: { fontSize: 12, marginBottom: 2 },
-  detailValue: { fontSize: 15, fontWeight: '500' },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+  detailLabel: { ...Type.caption, marginBottom: 2 },
+  detailValue: { ...Type.body, fontWeight: '500' },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm, marginTop: Space.xs },
   tag: {
-    backgroundColor: Colors.primary[50],
-    borderRadius: 6,
-    paddingHorizontal: 8,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Space.sm,
     paddingVertical: 2,
   },
-  tagText: { color: Colors.primary.main, fontSize: 12, fontWeight: '500' },
+  tagText: { ...Type.caption, fontWeight: '500' },
   actions: {
     flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 32,
+    gap: Space.md,
+    paddingHorizontal: Space.lg,
+    paddingBottom: Space.xxl,
   },
   actionBtn: { flex: 1 },
 });

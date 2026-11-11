@@ -2,31 +2,34 @@ import { Tabs } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Type } from '@/shared/constants/theme';
 
 export default function TabsLayout() {
-  const { isDark, colors } = useTheme();
+  const { colors, accent } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary.main,
+        tabBarActiveTintColor: accent,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          elevation: 8,
+          elevation: 0,
           shadowColor: Colors.black,
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 4,
+          shadowOffset: { width: 0, height: -1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 4,
+          height: 64,
+          paddingBottom: Space.sm,
+          paddingTop: Space.xs,
         },
         tabBarLabelStyle: {
+          // 11px so "Transactions" fits five tabs on a 375px phone.
           fontSize: 11,
+          lineHeight: 14,
           fontWeight: '500',
         },
       }}

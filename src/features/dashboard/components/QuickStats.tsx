@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text, Surface } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { formatCurrency, formatPercent } from '@/shared/utils/formatCurrency';
 
 interface QuickStatsProps {
@@ -13,33 +15,42 @@ interface QuickStatsProps {
 }
 
 export function QuickStats({ savings, savingsRate, budgetUsage, currency }: QuickStatsProps) {
+  const { colors, isDark } = useTheme();
+  const card = [styles.statCard, { backgroundColor: colors.surface }];
+  const over = budgetUsage > 0.9;
+  const successBg = isDark ? 'rgba(74,222,128,0.12)' : Colors.success.background;
+  const budgetBg = over
+    ? isDark ? 'rgba(248,113,113,0.12)' : Colors.error.background
+    : isDark ? 'rgba(251,191,36,0.12)' : Colors.warning.background;
+  // Darker status shades lack contrast on the dark surface.
+  const tone = (c: { main: string; light: string }) => (isDark ? c.light : c.main);
   return (
     <View style={styles.container}>
-      <Surface style={[styles.statCard, styles.savingsCard]} elevation={1}>
-        <View style={[styles.statIcon, { backgroundColor: Colors.success.background }]}>
-          <MaterialCommunityIcons name="piggy-bank" size={22} color={Colors.success.main} />
+      <View style={card}>
+        <View style={[styles.statIcon, { backgroundColor: successBg }]}>
+          <MaterialCommunityIcons name="piggy-bank" size={22} color={tone(Colors.success)} />
         </View>
-        <Text style={styles.statLabel}>Savings</Text>
-        <Text style={[styles.statValue, { color: savings >= 0 ? Colors.success.main : Colors.error.main }]}>
+        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Savings</Text>
+        <Text style={[styles.statValue, { color: savings >= 0 ? tone(Colors.success) : tone(Colors.error) }]}>
           {formatCurrency(savings, currency, { compact: true, showSign: true })}
         </Text>
-        <Text style={styles.statSub}>{formatPercent(savingsRate)} of income</Text>
-      </Surface>
+        <Text style={[styles.statSub, { color: colors.textTertiary }]}>{formatPercent(savingsRate)} of income</Text>
+      </View>
 
-      <Surface style={[styles.statCard, styles.budgetCard]} elevation={1}>
-        <View style={[styles.statIcon, { backgroundColor: budgetUsage > 0.9 ? Colors.error.background : Colors.warning.background }]}>
+      <View style={card}>
+        <View style={[styles.statIcon, { backgroundColor: budgetBg }]}>
           <MaterialCommunityIcons
             name="wallet-outline"
             size={22}
-            color={budgetUsage > 0.9 ? Colors.error.main : Colors.warning.main}
+            color={over ? tone(Colors.error) : tone(Colors.warning)}
           />
         </View>
-        <Text style={styles.statLabel}>Budget Used</Text>
-        <Text style={[styles.statValue, { color: budgetUsage > 0.9 ? Colors.error.main : Colors.warning.main }]}>
+        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Budget Used</Text>
+        <Text style={[styles.statValue, { color: over ? tone(Colors.error) : tone(Colors.warning) }]}>
           {formatPercent(budgetUsage * 100)}
         </Text>
-        <Text style={styles.statSub}>of monthly budget</Text>
-      </Surface>
+        <Text style={[styles.statSub, { color: colors.textTertiary }]}>of monthly budget</Text>
+      </View>
     </View>
   );
 }
@@ -47,37 +58,33 @@ export function QuickStats({ savings, savingsRate, budgetUsage, currency }: Quic
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: Space.lg,
+    gap: Space.md,
   },
   statCard: {
     flex: 1,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Space.lg,
     alignItems: 'flex-start',
   },
-  savingsCard: {},
-  budgetCard: {},
   statIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: Space.md,
   },
   statLabel: {
-    fontSize: 12,
-    color: Colors.grey[500],
-    marginBottom: 4,
+    ...Type.caption,
+    marginBottom: Space.xs,
   },
   statValue: {
-    fontSize: 20,
+    ...Type.title,
     fontWeight: '700',
     marginBottom: 2,
   },
   statSub: {
-    fontSize: 10,
-    color: Colors.grey[400],
+    ...Type.caption,
   },
 });

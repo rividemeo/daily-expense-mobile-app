@@ -4,6 +4,8 @@ import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
 import { Transaction, Category } from '@/types/models';
 import { formatTransactionDate } from '@/shared/utils/formatDate';
@@ -26,6 +28,7 @@ export function TransactionItem({
   const getCategoryById = useCategoryStore((s) => s.getCategoryById);
   const category = getCategoryById(transaction.categoryId);
   const scale = useSharedValue(1);
+  const { colors, accent, isDark } = useTheme();
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -35,34 +38,35 @@ export function TransactionItem({
   const handlePressOut = () => { scale.value = withSpring(1); };
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View style={[styles.container, { backgroundColor: colors.surface }, animatedStyle]}>
       <TouchableOpacity
         style={styles.content}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         activeOpacity={1}
+        accessibilityRole="button"
       >
         <CategoryIcon
           icon={category?.icon ?? 'help-circle'}
-          color={category?.color ?? Colors.grey[400]}
+          color={category?.color ?? colors.textTertiary}
           size={44}
         />
 
         <View style={styles.details}>
-          <Text style={styles.description} numberOfLines={1}>
+          <Text style={[styles.description, { color: colors.text }]} numberOfLines={1}>
             {transaction.description}
           </Text>
           <View style={styles.meta}>
-            <Text style={styles.category}>{category?.name ?? 'Uncategorized'}</Text>
-            <Text style={styles.dot}>·</Text>
-            <Text style={styles.date}>{formatTransactionDate(transaction.date)}</Text>
+            <Text style={[styles.category, { color: colors.textSecondary }]}>{category?.name ?? 'Uncategorized'}</Text>
+            <Text style={[styles.dot, { color: colors.textTertiary }]}>·</Text>
+            <Text style={[styles.date, { color: colors.textTertiary }]}>{formatTransactionDate(transaction.date)}</Text>
           </View>
           {transaction.tags.length > 0 && (
             <View style={styles.tags}>
               {transaction.tags.slice(0, 2).map((tag) => (
-                <View key={tag} style={styles.tag}>
-                  <Text style={styles.tagText}>#{tag}</Text>
+                <View key={tag} style={[styles.tag, { backgroundColor: colors.surfaceAlt }]}>
+                  <Text style={[styles.tagText, { color: accent }]}>#{tag}</Text>
                 </View>
               ))}
             </View>
@@ -73,16 +77,23 @@ export function TransactionItem({
           <Text
             style={[
               styles.amount,
-              { color: transaction.type === 'income' ? Colors.income : Colors.expense },
+              {
+                color:
+                  transaction.type === 'income'
+                    ? isDark ? Colors.success.light : Colors.income
+                    : isDark ? Colors.error.light : Colors.expense,
+              },
             ]}
           >
             {transaction.type === 'income' ? '+' : '-'}
             {formatCurrency(transaction.amount, currency)}
           </Text>
-          <View style={styles.methodBadge}>
-            <Text style={styles.methodText}>
-              {PAYMENT_ICONS[transaction.paymentMethod] ?? '💳'}
-            </Text>
+          <View style={[styles.methodBadge, { backgroundColor: colors.surfaceAlt }]}>
+            <MaterialCommunityIcons
+              name={PAYMENT_ICONS[transaction.paymentMethod] ?? 'credit-card-outline'}
+              size={14}
+              color={colors.textSecondary}
+            />
           </View>
         </View>
       </TouchableOpacity>
@@ -90,65 +101,60 @@ export function TransactionItem({
   );
 }
 
-const PAYMENT_ICONS: Record<string, string> = {
-  cash: '💵',
-  credit_card: '💳',
-  debit_card: '🏧',
-  bank_transfer: '🏦',
-  digital_wallet: '📱',
-  other: '💰',
+const PAYMENT_ICONS: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
+  cash: 'cash',
+  credit_card: 'credit-card-outline',
+  debit_card: 'credit-card-chip-outline',
+  bank_transfer: 'bank-outline',
+  digital_wallet: 'cellphone',
+  other: 'wallet-outline',
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.white,
-    marginHorizontal: 16,
-    marginVertical: 1,
-    borderRadius: 12,
+    marginHorizontal: Space.lg,
+    marginBottom: Space.sm,
+    borderRadius: Radius.lg,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    gap: 12,
+    padding: Space.md,
+    gap: Space.md,
   },
   details: {
     flex: 1,
   },
   description: {
-    fontSize: 15,
+    ...Type.body,
     fontWeight: '600',
-    color: Colors.grey[900],
-    marginBottom: 3,
+    marginBottom: 2,
   },
   meta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: Space.xs,
   },
-  category: { fontSize: 12, color: Colors.grey[500] },
-  dot: { color: Colors.grey[400], fontSize: 12 },
-  date: { fontSize: 12, color: Colors.grey[400] },
-  tags: { flexDirection: 'row', gap: 4, marginTop: 4 },
+  category: { ...Type.caption },
+  dot: { ...Type.caption },
+  date: { ...Type.caption },
+  tags: { flexDirection: 'row', gap: Space.xs, marginTop: Space.xs },
   tag: {
-    backgroundColor: Colors.primary[50],
-    borderRadius: 4,
-    paddingHorizontal: 6,
+    borderRadius: Radius.sm,
+    paddingHorizontal: Space.sm,
     paddingVertical: 1,
   },
-  tagText: { fontSize: 10, color: Colors.primary.main },
-  amountSection: { alignItems: 'flex-end', gap: 4 },
+  tagText: { ...Type.caption },
+  amountSection: { alignItems: 'flex-end', gap: Space.xs },
   amount: {
-    fontSize: 15,
-    fontWeight: '700',
+    ...Type.body,
+    fontWeight: '600',
   },
   methodBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.grey[100],
+    width: 24,
+    height: 24,
+    borderRadius: Radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  methodText: { fontSize: 12 },
 });

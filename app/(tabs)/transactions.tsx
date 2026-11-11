@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { TransactionItem } from '@/features/transactions/components/TransactionItem';
 import { TransactionSkeleton } from '@/shared/components/ui/Skeleton';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
@@ -23,7 +24,7 @@ import { groupTransactionsByDate } from '@/shared/utils/formatDate';
 import { Transaction } from '@/types/models';
 
 export default function TransactionsScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors, accent, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
@@ -79,14 +80,16 @@ export default function TransactionsScreen() {
           anchor={
             <TouchableOpacity
               onPress={() => setMenuVisible(true)}
-              style={styles.filterButton}
+              style={[styles.filterButton, { backgroundColor: colors.surfaceAlt }]}
+              accessibilityRole="button"
+              accessibilityLabel="Filter and sort options"
             >
               <MaterialCommunityIcons name="filter-variant" size={22} color={colors.text} />
             </TouchableOpacity>
           }
         >
-          <Menu.Item onPress={() => router.push('/transaction/export')} title="Export" leadingIcon="export" />
-          <Menu.Item onPress={() => router.push('/transaction/import')} title="Import" leadingIcon="import" />
+          <Menu.Item onPress={() => router.push('/settings/export')} title="Export" leadingIcon="export" />
+          <Menu.Item onPress={() => router.push('/settings/import')} title="Import" leadingIcon="import" />
           <Divider />
           <Menu.Item onPress={() => {}} title="Sort by Date" leadingIcon="sort-calendar-descending" />
           <Menu.Item onPress={() => {}} title="Sort by Amount" leadingIcon="sort-numeric-descending" />
@@ -98,7 +101,7 @@ export default function TransactionsScreen() {
         placeholder="Search transactions..."
         value={search}
         onChangeText={setSearch}
-        style={[styles.searchBar, { backgroundColor: colors.surface }]}
+        style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}
         inputStyle={{ color: colors.text }}
         iconColor={colors.textSecondary}
       />
@@ -110,27 +113,16 @@ export default function TransactionsScreen() {
             key={t}
             selected={typeFilter === t}
             onPress={() => setTypeFilter(t)}
+            hitSlop={{ top: 6, bottom: 6 }}
             style={[
               styles.chip,
-              typeFilter === t && {
-                backgroundColor:
-                  t === 'income'
-                    ? Colors.success.background
-                    : t === 'expense'
-                    ? Colors.error.background
-                    : Colors.primary[50],
-              },
+              { backgroundColor: colors.surfaceAlt },
+              typeFilter === t && { backgroundColor: accent },
             ]}
             textStyle={[
               styles.chipText,
-              typeFilter === t && {
-                color:
-                  t === 'income'
-                    ? Colors.success.main
-                    : t === 'expense'
-                    ? Colors.error.main
-                    : Colors.primary.main,
-              },
+              { color: colors.textSecondary },
+              typeFilter === t && { color: isDark ? Colors.primary[900] : Colors.white },
             ]}
           >
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -155,7 +147,7 @@ export default function TransactionsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={Colors.primary.main}
+              tintColor={accent}
             />
           }
         />
@@ -184,42 +176,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: Space.lg,
+    paddingTop: Space.sm,
+    paddingBottom: Space.md,
   },
-  title: { fontSize: 24, fontWeight: '800' },
+  title: { ...Type.headline },
   filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
+    width: TOUCH,
+    height: TOUCH,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchBar: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    borderRadius: 12,
+    marginHorizontal: Space.lg,
+    marginBottom: Space.md,
+    borderRadius: Radius.md,
     elevation: 0,
     borderWidth: 1,
-    borderColor: Colors.grey[200],
   },
   chips: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 8,
-    marginBottom: 8,
+    paddingHorizontal: Space.lg,
+    gap: Space.sm,
+    marginBottom: Space.sm,
   },
-  chip: { borderRadius: 20 },
-  chipText: { fontSize: 13 },
+  chip: { borderRadius: Radius.pill },
+  chipText: { ...Type.body },
   dateHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.sm,
   },
-  dateLabel: { fontSize: 13, fontWeight: '600' },
-  dateTotal: { fontSize: 12 },
+  dateLabel: { ...Type.body, fontWeight: '600' },
+  dateTotal: { ...Type.caption },
   listContent: { paddingBottom: 100 },
 });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import { TextInput, HelperText } from 'react-native-paper';
-import { Colors } from '@/shared/constants/colors';
+import { Radius, Type, Space } from '@/shared/constants/theme';
 
 interface InputProps {
   label: string;
@@ -55,7 +55,11 @@ export function Input({
         left={leftIcon ? <TextInput.Icon icon={leftIcon} /> : undefined}
         right={
           rightIcon ? (
-            <TextInput.Icon icon={rightIcon} onPress={onRightIconPress} />
+            <TextInput.Icon
+              icon={rightIcon}
+              onPress={onRightIconPress}
+              accessibilityLabel={rightIcon.startsWith('eye') ? 'Show or hide text' : rightIcon}
+            />
           ) : undefined
         }
         disabled={disabled}
@@ -77,12 +81,12 @@ export function Input({
 const styles = StyleSheet.create({
   input: {
     backgroundColor: 'transparent',
-    fontSize: 16,
+    fontSize: Type.bodyLg.fontSize,
   },
   outline: {
-    borderRadius: 12,
+    borderRadius: Radius.md,
   },
   helperText: {
-    marginTop: -4,
+    marginTop: -Space.xs,
   },
 });

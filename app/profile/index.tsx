@@ -14,6 +14,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useTheme } from '@/hooks/useTheme';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { CURRENCIES } from '@/shared/constants/currencies';
 
 const USER_PROFILE_KEY = 'local_user_profile';
@@ -26,7 +27,7 @@ const profileSchema = z.object({
 type ProfileForm = z.infer<typeof profileSchema>;
 
 export default function ProfileScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
   const { user, updateUser } = useAuthStore();
   const { showSnackbar } = useUIStore();
 
@@ -67,11 +68,16 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: TOUCH }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -82,7 +88,7 @@ export default function ProfileScreen() {
             style={{ backgroundColor: Colors.primary.main }}
           />
           <Text style={[styles.userName, { color: colors.text }]}>{user?.name ?? 'My Account'}</Text>
-          <Text style={[styles.badge, { backgroundColor: Colors.primary[50], color: Colors.primary.main }]}>
+          <Text style={[styles.badge, { backgroundColor: isDark ? 'rgba(45,212,191,0.12)' : Colors.primary[50], color: accent }]}>
             Local Account
           </Text>
         </View>
@@ -113,11 +119,13 @@ export default function ProfileScreen() {
                     key={c.code}
                     style={[
                       styles.currencyChip,
-                      { backgroundColor: colors.surface, borderColor: value === c.code ? Colors.primary.main : colors.border },
+                      { backgroundColor: colors.surface, borderColor: value === c.code ? accent : colors.border },
                     ]}
                     onPress={() => onChange(c.code)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: value === c.code }}
                   >
-                    <Text style={[styles.currencyCode, { color: value === c.code ? Colors.primary.main : colors.text }]}>
+                    <Text style={[styles.currencyCode, { color: value === c.code ? accent : colors.text }]}>
                       {c.code}
                     </Text>
                     <Text style={[styles.currencySymbol, { color: colors.textSecondary }]}>{c.symbol}</Text>
@@ -137,8 +145,8 @@ export default function ProfileScreen() {
           </Button>
         </View>
 
-        <View style={[styles.dangerSection, { backgroundColor: Colors.error.background }]}>
-          <Text style={styles.dangerTitle}>Danger Zone</Text>
+        <View style={[styles.dangerSection, { backgroundColor: isDark ? 'rgba(248,113,113,0.12)' : Colors.error.background }]}>
+          <Text style={[styles.dangerTitle, { color: isDark ? Colors.error.light : Colors.error.main }]}>Danger Zone</Text>
           <Text style={[styles.dangerDesc, { color: colors.textSecondary }]}>
             Permanently delete all local data including transactions, budgets, and settings.
           </Text>
@@ -153,20 +161,20 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
-  backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.grey[100], alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 20, fontWeight: '700' },
-  content: { padding: 16, gap: 24, paddingBottom: 40 },
-  avatarSection: { alignItems: 'center', gap: 8 },
-  userName: { fontSize: 22, fontWeight: '700' },
-  badge: { fontSize: 12, fontWeight: '600', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
-  form: { gap: 16 },
-  fieldLabel: { fontSize: 14, fontWeight: '600' },
-  currencyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  currencyChip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, alignItems: 'center', minWidth: 64 },
-  currencyCode: { fontSize: 14, fontWeight: '700' },
-  currencySymbol: { fontSize: 12 },
-  dangerSection: { borderRadius: 12, padding: 16, gap: 12 },
-  dangerTitle: { fontSize: 15, fontWeight: '700', color: Colors.error.main },
-  dangerDesc: { fontSize: 13, lineHeight: 18 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Space.lg, paddingVertical: Space.md },
+  backBtn: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  title: { ...Type.title },
+  content: { padding: Space.lg, gap: Space.xl, paddingBottom: Space.xxl },
+  avatarSection: { alignItems: 'center', gap: Space.sm },
+  userName: { ...Type.headline },
+  badge: { ...Type.caption, fontWeight: '600', paddingHorizontal: Space.md, paddingVertical: 3, borderRadius: Radius.pill, overflow: 'hidden' },
+  form: { gap: Space.lg },
+  fieldLabel: { ...Type.body, fontWeight: '600' },
+  currencyGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
+  currencyChip: { paddingHorizontal: Space.md, paddingVertical: Space.sm, minHeight: TOUCH, justifyContent: 'center', borderRadius: Radius.md, borderWidth: 1.5, alignItems: 'center', minWidth: 64 },
+  currencyCode: { ...Type.body, fontWeight: '600' },
+  currencySymbol: { ...Type.caption },
+  dangerSection: { borderRadius: Radius.lg, padding: Space.lg, gap: Space.md },
+  dangerTitle: { ...Type.body, fontWeight: '600' },
+  dangerDesc: { ...Type.body },
 });

@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useQueryClient } from '@tanstack/react-query';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { BalanceCard } from '@/features/dashboard/components/BalanceCard';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { TransactionItem } from '@/features/transactions/components/TransactionItem';
@@ -28,7 +29,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 export default function DashboardScreen() {
   const user = useAuthStore((s) => s.user);
-  const { colors, isDark } = useTheme();
+  const { colors, accent, isDark } = useTheme();
   const queryClient = useQueryClient();
 
   const { data: transactions, isLoading: txLoading, refetch: refetchTx } = useTransactionsQuery({ pageSize: 5 });
@@ -69,7 +70,7 @@ export default function DashboardScreen() {
       <View style={styles.header}>
         <View>
           <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-            {getGreeting()}, {user?.name?.split(' ')[0] ?? 'there'} 👋
+            {getGreeting()}, {user?.name?.split(' ')[0] ?? 'there'}
           </Text>
           <Text style={[styles.month, { color: colors.text }]}>
             {formatMonthYear(now)}
@@ -77,21 +78,26 @@ export default function DashboardScreen() {
         </View>
         <View style={styles.headerActions}>
           {!isOnline && (
-            <View style={styles.offlineBadge}>
-              <MaterialCommunityIcons name="wifi-off" size={14} color={Colors.warning.main} />
+            <View
+              style={[
+                styles.offlineBadge,
+                { backgroundColor: isDark ? 'rgba(251,191,36,0.12)' : Colors.warning.background },
+              ]}
+              accessibilityLabel="Offline"
+            >
+              <MaterialCommunityIcons
+                name="wifi-off"
+                size={14}
+                color={isDark ? Colors.warning.light : Colors.warning.main}
+              />
             </View>
           )}
           <TouchableOpacity
-            onPress={() => router.push('/notifications')}
-            style={styles.notifButton}
+            onPress={() => router.push('/profile')}
+            style={styles.avatar}
+            accessibilityRole="button"
+            accessibilityLabel="Profile"
           >
-            <MaterialCommunityIcons
-              name="bell-outline"
-              size={24}
-              color={colors.text}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/profile')} style={styles.avatar}>
             <Text style={styles.avatarText}>
               {(user?.name ?? 'U').charAt(0).toUpperCase()}
             </Text>
@@ -107,14 +113,15 @@ export default function DashboardScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.primary.main}
+            tintColor={accent}
+            colors={[accent]}
           />
         }
       >
         {/* Balance Card */}
         {statsLoading ? (
           <View style={styles.balanceSkeleton}>
-            <Skeleton height={160} borderRadius={24} />
+            <Skeleton height={160} borderRadius={Radius.lg} />
           </View>
         ) : (
           <BalanceCard
@@ -139,8 +146,12 @@ export default function DashboardScreen() {
           <>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Budget Overview</Text>
-              <TouchableOpacity onPress={() => router.push('/(tabs)/budgets')}>
-                <Text style={styles.seeAll}>See all</Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/budgets')}
+                style={styles.seeAllButton}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.seeAll, { color: accent }]}>See all</Text>
               </TouchableOpacity>
             </View>
             {budgets.slice(0, 3).map((budget) => {
@@ -155,7 +166,7 @@ export default function DashboardScreen() {
                       {Math.round(pct * 100)}%
                     </Text>
                   </View>
-                  <View style={styles.budgetBar}>
+                  <View style={[styles.budgetBar, { backgroundColor: colors.track }]}>
                     <View
                       style={[
                         styles.budgetFill,
@@ -172,8 +183,12 @@ export default function DashboardScreen() {
         {/* Recent Transactions */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Transactions</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/transactions')}>
-            <Text style={styles.seeAll}>See all</Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/transactions')}
+            style={styles.seeAllButton}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.seeAll, { color: accent }]}>See all</Text>
           </TouchableOpacity>
         </View>
 
@@ -223,66 +238,57 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  greeting: { fontSize: 14, marginBottom: 2 },
-  month: { fontSize: 20, fontWeight: '700' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  greeting: { ...Type.body, marginBottom: 2 },
+  month: { ...Type.title, fontWeight: '700' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
   offlineBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: Colors.warning.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notifButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: TOUCH,
+    height: TOUCH,
+    borderRadius: TOUCH / 2,
     backgroundColor: Colors.primary.main,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
+  avatarText: { ...Type.bodyLg, color: Colors.white, fontWeight: '600' },
   scroll: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
-  balanceSkeleton: { paddingHorizontal: 16 },
-  sectionSpacer: { height: 16 },
+  balanceSkeleton: { paddingHorizontal: Space.lg },
+  sectionSpacer: { height: Space.lg },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginTop: 24,
-    marginBottom: 12,
+    paddingHorizontal: Space.lg,
+    marginTop: Space.xl,
+    marginBottom: Space.sm,
   },
-  sectionTitle: { fontSize: 18, fontWeight: '700' },
-  seeAll: { color: Colors.primary.main, fontSize: 14, fontWeight: '500' },
+  sectionTitle: { ...Type.title },
+  seeAllButton: { minHeight: TOUCH, justifyContent: 'center', paddingLeft: Space.md },
+  seeAll: { ...Type.body, fontWeight: '500' },
   budgetItem: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 12,
-    padding: 14,
+    marginHorizontal: Space.lg,
+    marginBottom: Space.sm,
+    borderRadius: Radius.lg,
+    padding: Space.md,
   },
-  budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  budgetName: { fontSize: 14, fontWeight: '600' },
-  budgetAmt: { fontSize: 14, fontWeight: '700' },
+  budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Space.sm },
+  budgetName: { ...Type.body, fontWeight: '600' },
+  budgetAmt: { ...Type.body, fontWeight: '600' },
   budgetBar: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: Colors.grey[200],
     overflow: 'hidden',
   },
   budgetFill: { height: 6, borderRadius: 3 },
-  bottomPad: { height: 20 },
+  bottomPad: { height: Space.xl },
 });

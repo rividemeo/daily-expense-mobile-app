@@ -10,6 +10,7 @@ import { useTransactionStore } from '@/stores/transactionStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useTheme } from '@/hooks/useTheme';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 
 type ExportFormat = 'csv' | 'excel' | 'pdf';
@@ -30,7 +31,8 @@ const DATE_RANGES: { value: DateRange; label: string }[] = [
 ];
 
 export default function ExportScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
+  const tint = isDark ? 'rgba(45,212,191,0.12)' : Colors.primary[50];
   const transactions = useTransactionStore((s) => s.transactions);
   const currency = useAuthStore((s) => s.user?.currency ?? 'IDR');
   const { showSnackbar } = useUIStore();
@@ -63,44 +65,51 @@ export default function ExportScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Export Data</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: TOUCH }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Summary */}
-        <View style={[styles.summaryCard, { backgroundColor: Colors.primary.main }]}>
-          <Text style={styles.summaryTitle}>{filteredTransactions.length} transactions</Text>
+        <View style={[styles.summaryCard, { backgroundColor: colors.hero }]}>
+          <Text style={[styles.summaryTitle, { color: colors.onHero }]}>{filteredTransactions.length} transactions</Text>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <MaterialCommunityIcons name="arrow-down-circle" size={16} color="rgba(255,255,255,0.8)" />
-              <Text style={styles.summaryLabel}>Income</Text>
-              <Text style={styles.summaryAmount}>{formatCurrency(totalIncome, currency, { compact: true })}</Text>
+              <MaterialCommunityIcons name="arrow-down-circle" size={16} color={colors.onHeroMuted} />
+              <Text style={[styles.summaryLabel, { color: colors.onHeroMuted }]}>Income</Text>
+              <Text style={[styles.summaryAmount, { color: colors.onHero }]}>{formatCurrency(totalIncome, currency, { compact: true })}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <MaterialCommunityIcons name="arrow-up-circle" size={16} color="rgba(255,255,255,0.8)" />
-              <Text style={styles.summaryLabel}>Expenses</Text>
-              <Text style={styles.summaryAmount}>{formatCurrency(totalExpense, currency, { compact: true })}</Text>
+              <MaterialCommunityIcons name="arrow-up-circle" size={16} color={colors.onHeroMuted} />
+              <Text style={[styles.summaryLabel, { color: colors.onHeroMuted }]}>Expenses</Text>
+              <Text style={[styles.summaryAmount, { color: colors.onHero }]}>{formatCurrency(totalExpense, currency, { compact: true })}</Text>
             </View>
           </View>
         </View>
 
         {/* Format selection */}
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>FORMAT</Text>
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {FORMAT_OPTIONS.map((opt, index) => (
             <React.Fragment key={opt.value}>
-              {index > 0 && <View style={[styles.itemDivider, { backgroundColor: colors.border }]} />}
+              {index > 0 && <View style={[styles.itemDivider, { backgroundColor: colors.divider }]} />}
               <TouchableOpacity
                 style={styles.optionRow}
                 onPress={() => setFormat(opt.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: format === opt.value }}
               >
-                <View style={[styles.optionIcon, { backgroundColor: Colors.primary[50] }]}>
-                  <MaterialCommunityIcons name={opt.icon as any} size={22} color={Colors.primary.main} />
+                <View style={[styles.optionIcon, { backgroundColor: tint }]}>
+                  <MaterialCommunityIcons name={opt.icon as any} size={22} color={accent} />
                 </View>
                 <View style={styles.optionInfo}>
                   <Text style={[styles.optionLabel, { color: colors.text }]}>{opt.label}</Text>
@@ -119,13 +128,15 @@ export default function ExportScreen() {
 
         {/* Date range */}
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>DATE RANGE</Text>
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {DATE_RANGES.map((range, index) => (
             <React.Fragment key={range.value}>
-              {index > 0 && <View style={[styles.itemDivider, { backgroundColor: colors.border }]} />}
+              {index > 0 && <View style={[styles.itemDivider, { backgroundColor: colors.divider }]} />}
               <TouchableOpacity
                 style={styles.rangeRow}
                 onPress={() => setDateRange(range.value)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: dateRange === range.value }}
               >
                 <Text style={[styles.rangeLabel, { color: colors.text }]}>{range.label}</Text>
                 <RadioButton
@@ -164,56 +175,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 18, fontWeight: '700' },
-  content: { padding: 16, gap: 8, paddingBottom: 40 },
+  backBtn: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  title: { ...Type.title },
+  content: { padding: Space.lg, gap: Space.sm, paddingBottom: Space.xxl },
   summaryCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 8,
+    borderRadius: Radius.lg,
+    padding: Space.xl,
+    marginBottom: Space.sm,
   },
-  summaryTitle: { color: Colors.white, fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  summaryTitle: { ...Type.title, marginBottom: Space.md },
   summaryRow: { flexDirection: 'row', alignItems: 'center' },
-  summaryItem: { flex: 1, alignItems: 'center', gap: 4 },
-  summaryLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
-  summaryAmount: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+  summaryItem: { flex: 1, alignItems: 'center', gap: Space.xs },
+  summaryLabel: { ...Type.caption },
+  summaryAmount: { ...Type.bodyLg, fontWeight: '600' },
   summaryDivider: { width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.2)' },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginTop: 8, marginLeft: 4 },
-  section: { borderRadius: 12, overflow: 'hidden' },
-  itemDivider: { height: 1, marginHorizontal: 16 },
+  sectionLabel: { ...Type.caption, fontWeight: '600', letterSpacing: 1, marginTop: Space.sm, marginLeft: Space.xs },
+  section: { borderRadius: Radius.lg, borderWidth: 1, overflow: 'hidden' },
+  itemDivider: { height: 1, marginHorizontal: Space.lg },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    gap: 12,
+    minHeight: TOUCH,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
+    gap: Space.md,
   },
   optionIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   optionInfo: { flex: 1 },
-  optionLabel: { fontSize: 15, fontWeight: '500' },
-  optionDesc: { fontSize: 12, marginTop: 2 },
+  optionLabel: { ...Type.body, fontWeight: '500' },
+  optionDesc: { ...Type.caption, marginTop: 2 },
   rangeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 4,
+    minHeight: TOUCH,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.xs,
   },
-  rangeLabel: { flex: 1, fontSize: 15, fontWeight: '400' },
-  exportBtn: { marginTop: 8 },
-  note: { fontSize: 12, textAlign: 'center', marginTop: 4 },
+  rangeLabel: { flex: 1, ...Type.body, fontWeight: '400' },
+  exportBtn: { marginTop: Space.sm },
+  note: { ...Type.caption, textAlign: 'center', marginTop: Space.xs },
 });

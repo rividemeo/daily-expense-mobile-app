@@ -13,6 +13,7 @@ import { useTransactionsQuery } from '@/hooks/useTransactions';
 import { useAuthStore } from '@/stores/authStore';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type } from '@/shared/constants/theme';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { useTheme } from '@/hooks/useTheme';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
@@ -24,7 +25,11 @@ const { width } = Dimensions.get('window');
 type Period = 'week' | 'month' | 'year';
 
 export default function ReportsScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
+  const incomeColor = isDark ? Colors.success.light : Colors.success.main;
+  const expenseColor = isDark ? Colors.error.light : Colors.error.main;
+  const incomeBg = isDark ? 'rgba(74,222,128,0.12)' : Colors.success.background;
+  const expenseBg = isDark ? 'rgba(248,113,113,0.12)' : Colors.error.background;
   const [period, setPeriod] = useState<Period>('month');
   const [chartTab, setChartTab] = useState<'spending' | 'income' | 'cashflow'>('spending');
   const user = useAuthStore((s) => s.user);
@@ -85,9 +90,9 @@ export default function ReportsScreen() {
     return Object.entries(days).map(([date, value]) => ({
       value: Math.round(value),
       label: new Date(date).toLocaleDateString('en', { weekday: 'short' }),
-      frontColor: Colors.primary.main,
+      frontColor: accent,
     }));
-  }, [expenses]);
+  }, [expenses, accent]);
 
   // Line chart - cumulative spending
   const lineData = useMemo(() => {
@@ -110,6 +115,7 @@ export default function ReportsScreen() {
         <SegmentedButtons
           value={period}
           onValueChange={(v) => setPeriod(v as Period)}
+          theme={{ colors: { secondaryContainer: accent, onSecondaryContainer: isDark ? Colors.primary[900] : Colors.white } }}
           buttons={[
             { value: 'week', label: 'This Week' },
             { value: 'month', label: 'This Month' },
@@ -124,24 +130,24 @@ export default function ReportsScreen() {
             label="Total Income"
             value={formatCurrency(totalIncome, currency, { compact: true })}
             icon="arrow-down-circle"
-            color={Colors.success.main}
-            bg={Colors.success.background}
+            color={incomeColor}
+            bg={incomeBg}
           />
           <SummaryCard
             label="Total Expenses"
             value={formatCurrency(totalExpenses, currency, { compact: true })}
             icon="arrow-up-circle"
-            color={Colors.error.main}
-            bg={Colors.error.background}
+            color={expenseColor}
+            bg={expenseBg}
           />
         </View>
-        <View style={[styles.savingsCard, { backgroundColor: netSavings >= 0 ? Colors.success.background : Colors.error.background }]}>
-          <Text style={styles.savingsLabel}>Net Savings</Text>
-          <Text style={[styles.savingsValue, { color: netSavings >= 0 ? Colors.success.main : Colors.error.main }]}>
+        <View style={[styles.savingsCard, { backgroundColor: netSavings >= 0 ? incomeBg : expenseBg }]}>
+          <Text style={[styles.savingsLabel, { color: colors.textSecondary }]}>Net Savings</Text>
+          <Text style={[styles.savingsValue, { color: netSavings >= 0 ? incomeColor : expenseColor }]}>
             {formatCurrency(netSavings, currency, { showSign: true })}
           </Text>
           {totalIncome > 0 && (
-            <Text style={{ color: Colors.grey[600], fontSize: 12 }}>
+            <Text style={{ color: colors.textSecondary, ...Type.caption }}>
               {Math.round((netSavings / totalIncome) * 100)}% savings rate
             </Text>
           )}
@@ -157,10 +163,11 @@ export default function ReportsScreen() {
                 donut
                 radius={90}
                 innerRadius={55}
+                innerCircleColor={colors.surface}
                 centerLabelComponent={() => (
                   <View style={{ alignItems: 'center' }}>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary }}>Total</Text>
-                    <Text style={{ fontSize: 14, fontWeight: '700', color: colors.text }}>
+                    <Text style={{ ...Type.caption, color: colors.textSecondary }}>Total</Text>
+                    <Text style={{ ...Type.body, fontWeight: '700', color: colors.text }}>
                       {formatCurrency(totalExpenses, currency, { compact: true })}
                     </Text>
                   </View>
@@ -197,8 +204,8 @@ export default function ReportsScreen() {
               hideRules
               xAxisThickness={0}
               yAxisThickness={0}
-              yAxisTextStyle={{ color: colors.textSecondary, fontSize: 10 }}
-              xAxisLabelTextStyle={{ color: colors.textSecondary, fontSize: 10 }}
+              yAxisTextStyle={{ color: colors.textTertiary, ...Type.caption }}
+              xAxisLabelTextStyle={{ color: colors.textTertiary, ...Type.caption }}
               noOfSections={4}
               maxValue={Math.max(...barData.map((d) => d.value)) * 1.2 || 100}
             />
@@ -213,20 +220,20 @@ export default function ReportsScreen() {
               data={lineData}
               width={width - 80}
               height={180}
-              color={Colors.primary.main}
+              color={accent}
               thickness={2.5}
-              startFillColor={Colors.primary.main}
-              endFillColor={Colors.primary[50]}
-              startOpacity={0.3}
-              endOpacity={0.05}
+              startFillColor={accent}
+              endFillColor={accent}
+              startOpacity={0.12}
+              endOpacity={0.12}
               areaChart
               hideDataPoints={false}
-              dataPointsColor={Colors.primary.main}
+              dataPointsColor={accent}
               dataPointsRadius={4}
               hideRules
               xAxisThickness={0}
               yAxisThickness={0}
-              yAxisTextStyle={{ color: colors.textSecondary, fontSize: 10 }}
+              yAxisTextStyle={{ color: colors.textTertiary, ...Type.caption }}
               noOfSections={4}
             />
           </View>
@@ -252,10 +259,11 @@ function SummaryCard({
   bg: string;
 }) {
   const { MaterialCommunityIcons } = require('@expo/vector-icons');
+  const { colors } = useTheme();
   return (
     <View style={[styles.summaryCard, { backgroundColor: bg }]}>
       <MaterialCommunityIcons name={icon} size={22} color={color} />
-      <Text style={styles.summaryCardLabel}>{label}</Text>
+      <Text style={[styles.summaryCardLabel, { color: colors.textSecondary }]}>{label}</Text>
       <Text style={[styles.summaryCardValue, { color }]}>{value}</Text>
     </View>
   );
@@ -263,37 +271,37 @@ function SummaryCard({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
-  title: { fontSize: 24, fontWeight: '800' },
-  content: { padding: 16, gap: 16, paddingBottom: 40 },
-  periodSelector: { borderRadius: 12 },
-  summaryRow: { flexDirection: 'row', gap: 12 },
+  header: { paddingHorizontal: Space.lg, paddingTop: Space.sm, paddingBottom: Space.md },
+  title: { ...Type.headline },
+  content: { padding: Space.lg, gap: Space.lg, paddingBottom: Space.xxl + Space.sm },
+  periodSelector: { borderRadius: Radius.md },
+  summaryRow: { flexDirection: 'row', gap: Space.md },
   summaryCard: {
     flex: 1,
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Space.lg,
     alignItems: 'flex-start',
-    gap: 6,
+    gap: Space.sm,
   },
-  summaryCardLabel: { fontSize: 12, color: Colors.grey[600] },
-  summaryCardValue: { fontSize: 20, fontWeight: '700' },
+  summaryCardLabel: { ...Type.caption },
+  summaryCardValue: { ...Type.title, fontWeight: '700' },
   savingsCard: {
-    borderRadius: 14,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Space.lg,
     alignItems: 'center',
-    gap: 4,
+    gap: Space.xs,
   },
-  savingsLabel: { fontSize: 13, color: Colors.grey[600] },
-  savingsValue: { fontSize: 28, fontWeight: '800' },
+  savingsLabel: { ...Type.body },
+  savingsValue: { ...Type.headline, fontWeight: '700' },
   chartCard: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: Radius.lg,
+    padding: Space.lg,
   },
-  chartTitle: { fontSize: 16, fontWeight: '700', marginBottom: 16 },
-  pieContainer: { alignItems: 'center', marginBottom: 16 },
-  legend: { gap: 8 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  legendDot: { width: 10, height: 10, borderRadius: 5 },
-  legendLabel: { flex: 1, fontSize: 13 },
-  legendValue: { fontSize: 13, fontWeight: '600' },
+  chartTitle: { ...Type.bodyLg, fontWeight: '700', marginBottom: Space.lg },
+  pieContainer: { alignItems: 'center', marginBottom: Space.lg },
+  legend: { gap: Space.sm },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
+  legendDot: { width: 10, height: 10, borderRadius: Radius.pill },
+  legendLabel: { flex: 1, ...Type.body },
+  legendValue: { ...Type.body, fontWeight: '600' },
 });

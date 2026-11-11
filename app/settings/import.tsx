@@ -8,11 +8,15 @@ import { Colors } from '@/shared/constants/colors';
 import { Button } from '@/shared/components/ui/Button';
 import { useUIStore } from '@/stores/uiStore';
 import { useTheme } from '@/hooks/useTheme';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 
 type ImportStep = 'select' | 'preview' | 'importing' | 'done';
 
 export default function ImportScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
+  const tint = isDark ? 'rgba(45,212,191,0.12)' : Colors.primary[50];
+  const okBg = isDark ? 'rgba(74,222,128,0.12)' : Colors.success.background;
+  const ok = isDark ? Colors.success.light : Colors.success.main;
   const { showSnackbar } = useUIStore();
 
   const [step, setStep] = useState<ImportStep>('select');
@@ -40,19 +44,24 @@ export default function ImportScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Import Data</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: TOUCH }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {step === 'select' && (
           <>
             <View style={[styles.uploadArea, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-              <View style={styles.uploadIcon}>
-                <MaterialCommunityIcons name="file-upload-outline" size={48} color={Colors.primary.main} />
+              <View style={[styles.uploadIcon, { backgroundColor: tint }]}>
+                <MaterialCommunityIcons name="file-upload-outline" size={48} color={accent} />
               </View>
               <Text style={[styles.uploadTitle, { color: colors.text }]}>Select a file to import</Text>
               <Text style={[styles.uploadSubtitle, { color: colors.textSecondary }]}>
@@ -64,22 +73,22 @@ export default function ImportScreen() {
             </View>
 
             <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>REQUIREMENTS</Text>
-            <View style={[styles.requirementsCard, { backgroundColor: colors.surface }]}>
+            <View style={[styles.requirementsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {REQUIREMENTS.map((req) => (
                 <View key={req} style={styles.requirementRow}>
-                  <MaterialCommunityIcons name="check-circle-outline" size={16} color={Colors.success.main} />
+                  <MaterialCommunityIcons name="check-circle-outline" size={16} color={ok} />
                   <Text style={[styles.requirementText, { color: colors.text }]}>{req}</Text>
                 </View>
               ))}
             </View>
 
             <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>CSV TEMPLATE</Text>
-            <View style={[styles.templateCard, { backgroundColor: colors.surface }]}>
+            <View style={[styles.templateCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.templateLabel, { color: colors.textSecondary }]}>Required columns:</Text>
               <View style={styles.columns}>
                 {CSV_COLUMNS.map((col) => (
-                  <View key={col} style={[styles.columnTag, { backgroundColor: Colors.primary[50] }]}>
-                    <Text style={[styles.columnText, { color: Colors.primary.main }]}>{col}</Text>
+                  <View key={col} style={[styles.columnTag, { backgroundColor: tint }]}>
+                    <Text style={[styles.columnText, { color: accent }]}>{col}</Text>
                   </View>
                 ))}
               </View>
@@ -92,18 +101,23 @@ export default function ImportScreen() {
 
         {step === 'preview' && fileName && (
           <>
-            <View style={[styles.fileCard, { backgroundColor: Colors.success.background }]}>
-              <MaterialCommunityIcons name="file-check" size={32} color={Colors.success.main} />
+            <View style={[styles.fileCard, { backgroundColor: okBg }]}>
+              <MaterialCommunityIcons name="file-check" size={32} color={ok} />
               <View style={styles.fileInfo}>
                 <Text style={[styles.fileName, { color: colors.text }]}>{fileName}</Text>
                 <Text style={[styles.fileSize, { color: colors.textSecondary }]}>Ready to import</Text>
               </View>
-              <TouchableOpacity onPress={handleReset}>
+              <TouchableOpacity
+                onPress={handleReset}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Remove file"
+              >
                 <MaterialCommunityIcons name="close-circle" size={22} color={colors.textTertiary} />
               </TouchableOpacity>
             </View>
 
-            <View style={[styles.previewInfo, { backgroundColor: colors.surface }]}>
+            <View style={[styles.previewInfo, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <PreviewRow label="Estimated rows" value="42 transactions" colors={colors} />
               <PreviewRow label="Date range" value="Jan 2024 – Dec 2024" colors={colors} />
               <PreviewRow label="Duplicates" value="None detected" colors={colors} />
@@ -122,7 +136,7 @@ export default function ImportScreen() {
 
         {step === 'importing' && (
           <View style={styles.centerState}>
-            <ActivityIndicator size="large" color={Colors.primary.main} />
+            <ActivityIndicator size="large" color={accent} />
             <Text style={[styles.stateTitle, { color: colors.text }]}>Importing transactions...</Text>
             <Text style={[styles.stateSubtitle, { color: colors.textSecondary }]}>
               Please wait while we process your file.
@@ -132,8 +146,8 @@ export default function ImportScreen() {
 
         {step === 'done' && (
           <View style={styles.centerState}>
-            <View style={styles.successIcon}>
-              <MaterialCommunityIcons name="check-bold" size={40} color={Colors.success.main} />
+            <View style={[styles.successIcon, { backgroundColor: okBg }]}>
+              <MaterialCommunityIcons name="check-bold" size={40} color={ok} />
             </View>
             <Text style={[styles.stateTitle, { color: colors.text }]}>Import Complete!</Text>
             <Text style={[styles.stateSubtitle, { color: colors.textSecondary }]}>
@@ -156,7 +170,7 @@ export default function ImportScreen() {
 
 function PreviewRow({ label, value, colors }: { label: string; value: string; colors: any }) {
   return (
-    <View style={styles.previewRow}>
+    <View style={[styles.previewRow, { borderBottomColor: colors.divider }]}>
       <Text style={[styles.previewLabel, { color: colors.textSecondary }]}>{label}</Text>
       <Text style={[styles.previewValue, { color: colors.text }]}>{value}</Text>
     </View>
@@ -179,82 +193,76 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 18, fontWeight: '700' },
-  content: { padding: 16, gap: 16, paddingBottom: 40 },
+  backBtn: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  title: { ...Type.title },
+  content: { padding: Space.lg, gap: Space.lg, paddingBottom: Space.xxl },
   uploadArea: {
-    borderRadius: 16,
+    borderRadius: Radius.lg,
     borderWidth: 2,
     borderStyle: 'dashed',
-    padding: 32,
+    padding: Space.xxl,
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   uploadIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.primary[50],
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: Space.sm,
   },
-  uploadTitle: { fontSize: 17, fontWeight: '600' },
-  uploadSubtitle: { fontSize: 13, textAlign: 'center' },
-  pickBtn: { marginTop: 8 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginLeft: 4, marginBottom: -8 },
-  requirementsCard: { borderRadius: 12, padding: 16, gap: 10 },
-  requirementRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  requirementText: { fontSize: 13, flex: 1, lineHeight: 18 },
-  templateCard: { borderRadius: 12, padding: 16, gap: 12 },
-  templateLabel: { fontSize: 13, fontWeight: '500' },
-  columns: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  columnTag: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-  columnText: { fontSize: 12, fontWeight: '500', fontFamily: 'monospace' },
-  templateBtn: { marginTop: 4 },
+  uploadTitle: { ...Type.bodyLg, fontWeight: '600' },
+  uploadSubtitle: { ...Type.body, textAlign: 'center' },
+  pickBtn: { marginTop: Space.sm },
+  sectionLabel: { ...Type.caption, fontWeight: '600', letterSpacing: 1, marginLeft: Space.xs, marginBottom: -Space.sm },
+  requirementsCard: { borderRadius: Radius.lg, borderWidth: 1, padding: Space.lg, gap: Space.md },
+  requirementRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Space.sm },
+  requirementText: { ...Type.body, flex: 1 },
+  templateCard: { borderRadius: Radius.lg, borderWidth: 1, padding: Space.lg, gap: Space.md },
+  templateLabel: { ...Type.body, fontWeight: '500' },
+  columns: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
+  columnTag: { borderRadius: Radius.sm, paddingHorizontal: Space.sm, paddingVertical: Space.xs },
+  columnText: { ...Type.caption, fontWeight: '500', fontFamily: 'monospace' },
+  templateBtn: { marginTop: Space.xs },
   fileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
+    padding: Space.lg,
+    borderRadius: Radius.lg,
+    gap: Space.md,
   },
   fileInfo: { flex: 1 },
-  fileName: { fontSize: 15, fontWeight: '600' },
-  fileSize: { fontSize: 12, marginTop: 2 },
-  previewInfo: { borderRadius: 12, overflow: 'hidden' },
+  fileName: { ...Type.body, fontWeight: '600' },
+  fileSize: { ...Type.caption, marginTop: 2 },
+  closeBtn: { width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' },
+  previewInfo: { borderRadius: Radius.lg, borderWidth: 1, overflow: 'hidden' },
   previewRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 14,
+    alignItems: 'center',
+    minHeight: TOUCH,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.grey[100],
   },
-  previewLabel: { fontSize: 14 },
-  previewValue: { fontSize: 14, fontWeight: '500' },
-  actions: { flexDirection: 'row', gap: 12 },
+  previewLabel: { ...Type.body },
+  previewValue: { ...Type.body, fontWeight: '500' },
+  actions: { flexDirection: 'row', gap: Space.md },
   actionBtn: { flex: 1 },
-  centerState: { alignItems: 'center', gap: 12, paddingTop: 40 },
-  stateTitle: { fontSize: 20, fontWeight: '700' },
-  stateSubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  centerState: { alignItems: 'center', gap: Space.md, paddingTop: Space.xxl },
+  stateTitle: { ...Type.title },
+  stateSubtitle: { ...Type.body, textAlign: 'center' },
   successIcon: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.success.background,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  doneActions: { flexDirection: 'row', gap: 12, marginTop: 8 },
+  doneActions: { flexDirection: 'row', gap: Space.md, marginTop: Space.sm },
   doneBtn: { flex: 1 },
 });

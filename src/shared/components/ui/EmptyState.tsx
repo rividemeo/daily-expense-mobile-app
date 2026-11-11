@@ -2,7 +2,8 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors } from '@/shared/constants/colors';
+import { Space, Type } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from './Button';
 
 interface EmptyStateProps {
@@ -14,15 +15,16 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, description, actionLabel, onAction }: EmptyStateProps) {
+  const { colors } = useTheme();
   return (
     <View style={styles.container}>
-      <View style={styles.iconContainer}>
-        <MaterialCommunityIcons name={icon as any} size={64} color={Colors.grey[400]} />
+      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceAlt }]}>
+        <MaterialCommunityIcons name={icon as any} size={48} color={colors.textTertiary} />
       </View>
-      <Text variant="titleMedium" style={styles.title}>
+      <Text variant="titleMedium" style={[styles.title, { color: colors.text }]}>
         {title}
       </Text>
-      <Text variant="bodyMedium" style={styles.description}>
+      <Text variant="bodyMedium" style={[styles.description, { color: colors.textSecondary }]}>
         {description}
       </Text>
       {actionLabel && onAction && (
@@ -39,28 +41,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
+    padding: Space.xxl,
   },
   iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.grey[100],
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: Space.xl,
   },
   title: {
-    fontWeight: '700',
+    ...Type.title,
     textAlign: 'center',
-    marginBottom: 8,
-    color: Colors.grey[800],
+    marginBottom: Space.sm,
   },
   description: {
+    ...Type.body,
     textAlign: 'center',
-    color: Colors.grey[500],
-    lineHeight: 22,
-    marginBottom: 24,
+    marginBottom: Space.xl,
   },
   button: {
     minWidth: 160,

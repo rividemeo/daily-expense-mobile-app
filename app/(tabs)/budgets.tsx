@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
@@ -40,7 +41,8 @@ const budgetSchema = z.object({
 type BudgetForm = z.infer<typeof budgetSchema>;
 
 export default function BudgetsScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
+  const onAccent = isDark ? Colors.primary[900] : Colors.white;
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [modalVisible, setModalVisible] = useState(false);
@@ -112,23 +114,23 @@ export default function BudgetsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary.main} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} />}
       >
         {/* Summary */}
         {!isLoading && budgets && budgets.length > 0 && (
-          <View style={[styles.summary, { backgroundColor: Colors.primary.main }]}>
+          <View style={[styles.summary, { backgroundColor: colors.hero }]}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Total Budget</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(totalBudget, currency, { compact: true })}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.onHeroMuted }]}>Total Budget</Text>
+              <Text style={[styles.summaryValue, { color: colors.onHero }]}>{formatCurrency(totalBudget, currency, { compact: true })}</Text>
             </View>
             <View style={styles.summarySep} />
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Spent</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(totalSpent, currency, { compact: true })}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.onHeroMuted }]}>Spent</Text>
+              <Text style={[styles.summaryValue, { color: colors.onHero }]}>{formatCurrency(totalSpent, currency, { compact: true })}</Text>
             </View>
             <View style={styles.summarySep} />
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryLabel}>Remaining</Text>
+              <Text style={[styles.summaryLabel, { color: colors.onHeroMuted }]}>Remaining</Text>
               <Text style={[styles.summaryValue, { color: totalRemaining < 0 ? Colors.error.light : Colors.success.light }]}>
                 {formatCurrency(totalRemaining, currency, { compact: true })}
               </Text>
@@ -162,9 +164,14 @@ export default function BudgetsScreen() {
           onDismiss={() => { setModalVisible(false); reset(); }}
           contentContainerStyle={[styles.modal, { backgroundColor: colors.surface }]}
         >
-          <View style={styles.modalHeader}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>New Budget</Text>
-            <TouchableOpacity onPress={() => { setModalVisible(false); reset(); }}>
+            <TouchableOpacity
+              onPress={() => { setModalVisible(false); reset(); }}
+              style={styles.iconBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
               <MaterialCommunityIcons name="close" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -193,6 +200,7 @@ export default function BudgetsScreen() {
                   <SegmentedButtons
                     value={value}
                     onValueChange={onChange}
+                    theme={{ colors: { secondaryContainer: accent, onSecondaryContainer: onAccent } }}
                     buttons={[
                       { value: 'weekly', label: 'Weekly' },
                       { value: 'monthly', label: 'Monthly' },
@@ -205,20 +213,24 @@ export default function BudgetsScreen() {
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Category (optional)</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
                 <TouchableOpacity
-                  style={[styles.catChip, !selectedCategoryId && styles.catChipSelected]}
+                  style={[styles.catChip, { borderColor: colors.border }, !selectedCategoryId && { borderColor: accent, backgroundColor: accent + '1F' }]}
                   onPress={() => setValue('categoryId', '')}
+                  accessibilityRole="button"
+                  accessibilityLabel="All categories"
                 >
-                  <MaterialCommunityIcons name="all-inclusive" size={20} color={!selectedCategoryId ? Colors.primary.main : colors.textSecondary} />
-                  <Text style={{ fontSize: 10, color: !selectedCategoryId ? Colors.primary.main : colors.textSecondary }}>All</Text>
+                  <MaterialCommunityIcons name="all-inclusive" size={20} color={!selectedCategoryId ? accent : colors.textSecondary} />
+                  <Text style={{ ...Type.caption, color: !selectedCategoryId ? accent : colors.textSecondary }}>All</Text>
                 </TouchableOpacity>
                 {expenseCategories.map((cat) => (
                   <TouchableOpacity
                     key={cat.id}
-                    style={[styles.catChip, selectedCategoryId === cat.id && { borderColor: cat.color, backgroundColor: cat.color + '15' }]}
+                    style={[styles.catChip, { borderColor: colors.border }, selectedCategoryId === cat.id && { borderColor: cat.color, backgroundColor: cat.color + '1F' }]}
                     onPress={() => setValue('categoryId', cat.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={cat.name}
                   >
                     <CategoryIcon icon={cat.icon} color={cat.color} size={24} />
-                    <Text style={{ fontSize: 10, color: selectedCategoryId === cat.id ? cat.color : colors.text }} numberOfLines={1}>{cat.name}</Text>
+                    <Text style={{ ...Type.caption, color: selectedCategoryId === cat.id ? cat.color : colors.text }} numberOfLines={1}>{cat.name}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -247,6 +259,7 @@ function BudgetCard({
   onDelete: () => void;
   colors: any;
 }) {
+  const { accent, isDark } = useTheme();
   const category = budget.categoryId ? getCategoryById(budget.categoryId) : null;
   const progress = budget.amount > 0 ? budget.spent / budget.amount : 0;
   const remaining = budget.amount - budget.spent;
@@ -259,8 +272,8 @@ function BudgetCard({
           {category ? (
             <CategoryIcon icon={category.icon} color={category.color} size={40} />
           ) : (
-            <View style={[styles.budgetAllIcon, { backgroundColor: Colors.primary[50] }]}>
-              <MaterialCommunityIcons name="all-inclusive" size={20} color={Colors.primary.main} />
+            <View style={[styles.budgetAllIcon, { backgroundColor: colors.surfaceAlt }]}>
+              <MaterialCommunityIcons name="all-inclusive" size={20} color={accent} />
             </View>
           )}
           <View>
@@ -270,8 +283,13 @@ function BudgetCard({
             </Text>
           </View>
         </View>
-        <TouchableOpacity onPress={onDelete} style={styles.deleteBtn}>
-          <MaterialCommunityIcons name="trash-can-outline" size={18} color={Colors.error.main} />
+        <TouchableOpacity
+          onPress={onDelete}
+          style={styles.iconBtn}
+          accessibilityRole="button"
+          accessibilityLabel={`Delete budget ${budget.name}`}
+        >
+          <MaterialCommunityIcons name="trash-can-outline" size={18} color={isDark ? Colors.error.light : Colors.error.main} />
         </TouchableOpacity>
       </View>
 
@@ -284,21 +302,21 @@ function BudgetCard({
       />
 
       <View style={styles.budgetCardFooter}>
-        <Text style={[styles.remainingText, { color: isOverBudget ? Colors.error.main : Colors.success.main }]}>
+        <Text style={[styles.remainingText, { color: isOverBudget ? (isDark ? Colors.error.light : Colors.error.main) : (isDark ? Colors.success.light : Colors.success.main) }]}>
           {isOverBudget
             ? `${formatCurrency(Math.abs(remaining), currency)} over budget`
             : `${formatCurrency(remaining, currency)} remaining`}
         </Text>
         {progress >= 0.8 && progress < 1 && (
-          <View style={styles.alertBadge}>
-            <MaterialCommunityIcons name="alert-circle" size={14} color={Colors.warning.main} />
-            <Text style={styles.alertText}>Warning</Text>
+          <View style={[styles.alertBadge, { backgroundColor: isDark ? 'rgba(251,191,36,0.12)' : Colors.warning.background }]}>
+            <MaterialCommunityIcons name="alert-circle" size={14} color={isDark ? Colors.warning.light : Colors.warning.main} />
+            <Text style={[styles.alertText, { color: isDark ? Colors.warning.light : Colors.warning.main }]}>Warning</Text>
           </View>
         )}
         {progress >= 1 && (
-          <View style={[styles.alertBadge, { backgroundColor: Colors.error.background }]}>
-            <MaterialCommunityIcons name="alert" size={14} color={Colors.error.main} />
-            <Text style={[styles.alertText, { color: Colors.error.main }]}>Over budget!</Text>
+          <View style={[styles.alertBadge, { backgroundColor: isDark ? 'rgba(248,113,113,0.12)' : Colors.error.background }]}>
+            <MaterialCommunityIcons name="alert" size={14} color={isDark ? Colors.error.light : Colors.error.main} />
+            <Text style={[styles.alertText, { color: isDark ? Colors.error.light : Colors.error.main }]}>Over budget!</Text>
           </View>
         )}
       </View>
@@ -309,55 +327,54 @@ function BudgetCard({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingHorizontal: Space.lg,
+    paddingTop: Space.sm,
+    paddingBottom: Space.md,
   },
-  title: { fontSize: 24, fontWeight: '800' },
-  content: { padding: 16, gap: 12, paddingBottom: 100 },
+  title: { ...Type.headline },
+  content: { padding: Space.lg, gap: Space.md, paddingBottom: 100 },
   summary: {
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: Radius.lg,
+    padding: Space.xl,
     flexDirection: 'row',
     alignItems: 'center',
   },
   summaryItem: { flex: 1, alignItems: 'center' },
-  summaryLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginBottom: 4 },
-  summaryValue: { color: Colors.white, fontSize: 18, fontWeight: '700' },
+  summaryLabel: { ...Type.caption, marginBottom: Space.xs },
+  summaryValue: { ...Type.title, fontWeight: '700' },
   summarySep: { width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.2)' },
   budgetCard: {
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
+    borderRadius: Radius.lg,
+    padding: Space.lg,
+    gap: Space.md,
   },
   budgetCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  budgetCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  budgetCardLeft: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
   budgetAllIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  budgetCardName: { fontSize: 16, fontWeight: '600' },
-  budgetCardPeriod: { fontSize: 12 },
-  deleteBtn: { padding: 4 },
+  budgetCardName: { ...Type.bodyLg, fontWeight: '600' },
+  budgetCardPeriod: { ...Type.caption },
+  iconBtn: { width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' },
   progressBar: {},
   budgetCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  remainingText: { fontSize: 13, fontWeight: '600' },
+  remainingText: { ...Type.body, fontWeight: '600' },
   alertBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
+    gap: Space.xs,
+    paddingHorizontal: Space.sm,
     paddingVertical: 3,
-    borderRadius: 8,
-    backgroundColor: Colors.warning.background,
+    borderRadius: Radius.sm,
   },
-  alertText: { fontSize: 11, fontWeight: '600', color: Colors.warning.main },
+  alertText: { ...Type.caption, fontWeight: '600' },
   modal: {
-    margin: 16,
-    borderRadius: 20,
+    margin: Space.lg,
+    borderRadius: Radius.lg,
     overflow: 'hidden',
     maxHeight: '90%',
   },
@@ -365,22 +382,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: Space.md,
+    paddingLeft: Space.xl,
+    paddingRight: Space.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.grey[200],
   },
-  modalTitle: { fontSize: 20, fontWeight: '700' },
-  modalContent: { padding: 20, gap: 16 },
-  fieldLabel: { fontSize: 14, fontWeight: '600' },
-  catRow: { gap: 10 },
+  modalTitle: { ...Type.title, fontWeight: '700' },
+  modalContent: { padding: Space.xl, gap: Space.lg },
+  fieldLabel: { ...Type.body, fontWeight: '600' },
+  catRow: { gap: Space.sm },
   catChip: {
     alignItems: 'center',
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.grey[200],
+    padding: Space.sm,
+    borderRadius: Radius.md,
+    borderWidth: 1,
     width: 68,
-    gap: 4,
+    gap: Space.xs,
   },
-  catChipSelected: { borderColor: Colors.primary.main, backgroundColor: Colors.primary[50] },
 });

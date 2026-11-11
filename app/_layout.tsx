@@ -10,6 +10,7 @@ import { useFonts } from 'expo-font';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '@/hooks/useTheme';
+import { Colors } from '@/shared/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
 import { isOnboardingDone } from '@/services/storage/secureStorage';
 import { Snackbar } from 'react-native-paper';
@@ -98,9 +99,9 @@ function AppContent() {
           duration={3000}
           style={{
             backgroundColor:
-              snackbar?.type === 'success' ? '#2E7D32'
-              : snackbar?.type === 'error' ? '#C62828'
-              : '#1565C0',
+              snackbar?.type === 'success' ? Colors.success.main
+              : snackbar?.type === 'error' ? Colors.error.main
+              : Colors.grey[800],
           }}
         >
           {snackbar?.message ?? ''}

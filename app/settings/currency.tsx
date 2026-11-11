@@ -9,9 +9,10 @@ import { CURRENCIES } from '@/shared/constants/currencies';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useTheme } from '@/hooks/useTheme';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 
 export default function CurrencySettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
   const { showSnackbar } = useUIStore();
@@ -27,35 +28,44 @@ export default function CurrencySettingsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Currency</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: TOUCH }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.list}>
-        {CURRENCIES.map((currency) => {
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {CURRENCIES.map((currency, index) => {
           const isSelected = currency.code === selectedCurrency;
           return (
             <TouchableOpacity
               key={currency.code}
-              style={[styles.item, { backgroundColor: colors.surface }]}
+              style={[styles.item, index > 0 && { borderTopWidth: 1, borderTopColor: colors.divider }]}
               onPress={() => handleSelect(currency.code)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
             >
-              <View style={styles.symbolBox}>
-                <Text style={[styles.symbol, { color: Colors.primary.main }]}>{currency.symbol}</Text>
+              <View style={[styles.symbolBox, { backgroundColor: isDark ? 'rgba(45,212,191,0.12)' : Colors.primary[50] }]}>
+                <Text style={[styles.symbol, { color: accent }]}>{currency.symbol}</Text>
               </View>
               <View style={styles.info}>
                 <Text style={[styles.name, { color: colors.text }]}>{currency.name}</Text>
                 <Text style={[styles.code, { color: colors.textSecondary }]}>{currency.code}</Text>
               </View>
               {isSelected && (
-                <MaterialCommunityIcons name="check-circle" size={22} color={Colors.primary.main} />
+                <MaterialCommunityIcons name="check-circle" size={22} color={accent} />
               )}
             </TouchableOpacity>
           );
         })}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -67,36 +77,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 18, fontWeight: '700' },
-  list: { padding: 16, gap: 8 },
+  backBtn: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  title: { ...Type.title },
+  list: { padding: Space.lg },
+  card: { borderRadius: Radius.lg, borderWidth: 1, overflow: 'hidden' },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
+    minHeight: TOUCH,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
+    gap: Space.md,
   },
   symbolBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.primary[50],
+    width: 40,
+    height: 40,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  symbol: { fontSize: 16, fontWeight: '700' },
+  symbol: { ...Type.bodyLg, fontWeight: '600' },
   info: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '500' },
-  code: { fontSize: 12, marginTop: 2 },
+  name: { ...Type.body, fontWeight: '500' },
+  code: { ...Type.caption, marginTop: 2 },
 });

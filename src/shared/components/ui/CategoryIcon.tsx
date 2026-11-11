@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Radius } from '@/shared/constants/theme';
 
 interface CategoryIconProps {
   icon: string;
@@ -24,7 +25,7 @@ export function CategoryIcon({
         {
           width: size,
           height: size,
-          borderRadius: size / 2,
+          borderRadius: Math.min(Radius.md, size / 2), // rounded square
           backgroundColor: color + Math.round(backgroundOpacity * 255).toString(16).padStart(2, '0'),
         },
       ]}

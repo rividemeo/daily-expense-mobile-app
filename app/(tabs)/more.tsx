@@ -5,6 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/shared/constants/colors';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useTheme } from '@/hooks/useTheme';
@@ -19,11 +20,16 @@ interface MenuItemProps {
 }
 
 function MenuItem({ icon, label, description, onPress, color, rightElement }: MenuItemProps) {
-  const { colors } = useTheme();
+  const { colors, accent } = useTheme();
   return (
-    <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.surface }]} onPress={onPress}>
-      <View style={[styles.menuIcon, { backgroundColor: (color ?? Colors.primary.main) + '18' }]}>
-        <MaterialCommunityIcons name={icon as any} size={22} color={color ?? Colors.primary.main} />
+    <TouchableOpacity
+      style={[styles.menuItem, { backgroundColor: colors.surface }]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <View style={[styles.menuIcon, { backgroundColor: (color ?? accent) + '1F' }]}>
+        <MaterialCommunityIcons name={icon as any} size={22} color={color ?? accent} />
       </View>
       <View style={styles.menuContent}>
         <Text style={[styles.menuLabel, { color: colors.text }]}>{label}</Text>
@@ -37,7 +43,7 @@ function MenuItem({ icon, label, description, onPress, color, rightElement }: Me
 }
 
 export default function MoreScreen() {
-  const { colors, isDark } = useTheme();
+  const { colors, accent, isDark } = useTheme();
   const user = useAuthStore((s) => s.user);
   const { setTheme } = useUIStore();
 
@@ -50,17 +56,19 @@ export default function MoreScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         {/* Profile Card */}
         <TouchableOpacity
-          style={[styles.profileCard, { backgroundColor: Colors.primary.main }]}
+          style={[styles.profileCard, { backgroundColor: colors.hero }]}
           onPress={() => router.push('/profile')}
+          accessibilityRole="button"
+          accessibilityLabel="Open profile"
         >
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{(user?.name ?? 'M').charAt(0).toUpperCase()}</Text>
+            <Text style={[styles.avatarText, { color: colors.onHero }]}>{(user?.name ?? 'M').charAt(0).toUpperCase()}</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.name ?? 'My Account'}</Text>
-            <Text style={styles.profileSub}>Local Account · {user?.currency ?? 'IDR'}</Text>
+            <Text style={[styles.profileName, { color: colors.onHero }]}>{user?.name ?? 'My Account'}</Text>
+            <Text style={[styles.profileSub, { color: colors.onHeroMuted }]}>Local Account · {user?.currency ?? 'IDR'}</Text>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={22} color="rgba(255,255,255,0.7)" />
+          <MaterialCommunityIcons name="chevron-right" size={22} color={colors.onHeroMuted} />
         </TouchableOpacity>
 
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>MANAGE</Text>
@@ -79,12 +87,12 @@ export default function MoreScreen() {
             icon={isDark ? 'weather-night' : 'weather-sunny'}
             label="Dark Mode"
             onPress={() => {}}
-            color="#F59E0B"
+            color={Colors.warning.main}
             rightElement={
               <Switch
                 value={isDark}
                 onValueChange={(v) => setTheme(v ? 'dark' : 'light')}
-                color={Colors.primary.main}
+                color={accent}
               />
             }
           />
@@ -117,14 +125,14 @@ export default function MoreScreen() {
             label="Export Data"
             description="CSV, Excel, PDF"
             onPress={() => router.push('/settings/export')}
-            color="#10B981"
+            color={Colors.success.main}
           />
           <Divider />
           <MenuItem
             icon="import"
             label="Import Data"
             onPress={() => router.push('/settings/import')}
-            color="#14B8A6"
+            color={Colors.info.main}
           />
         </View>
 
@@ -132,10 +140,10 @@ export default function MoreScreen() {
         <View style={styles.section}>
           <MenuItem icon="information-outline" label="About ExpenseFlow" onPress={() => {}} />
           <Divider />
-          <MenuItem icon="star-outline" label="Rate Us" onPress={() => {}} color="#F59E0B" />
+          <MenuItem icon="star-outline" label="Rate Us" onPress={() => {}} color={Colors.warning.main} />
         </View>
 
-        <Text style={styles.version}>ExpenseFlow v1.0.0 · Offline Mode</Text>
+        <Text style={[styles.version, { color: colors.textTertiary }]}>ExpenseFlow v1.0.0 · Offline Mode</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -143,21 +151,21 @@ export default function MoreScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
-  title: { fontSize: 24, fontWeight: '800' },
-  content: { padding: 16, gap: 8, paddingBottom: 40 },
-  profileCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 16, gap: 12, marginBottom: 8 },
-  avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: Colors.white, fontSize: 22, fontWeight: '700' },
+  header: { paddingHorizontal: Space.lg, paddingTop: Space.sm, paddingBottom: Space.md },
+  title: { ...Type.headline },
+  content: { padding: Space.lg, gap: Space.sm, paddingBottom: Space.xxl + Space.sm },
+  profileCard: { flexDirection: 'row', alignItems: 'center', borderRadius: Radius.lg, padding: Space.lg, gap: Space.md, marginBottom: Space.sm },
+  avatar: { width: 52, height: 52, borderRadius: Radius.pill, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  avatarText: { ...Type.headline, fontWeight: '700' },
   profileInfo: { flex: 1 },
-  profileName: { color: Colors.white, fontSize: 17, fontWeight: '700' },
-  profileSub: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginTop: 8, marginLeft: 4 },
-  section: { borderRadius: 12, overflow: 'hidden' },
-  menuItem: { flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 },
-  menuIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  profileName: { ...Type.bodyLg, fontWeight: '700' },
+  profileSub: { ...Type.body },
+  sectionLabel: { ...Type.caption, fontWeight: '700', letterSpacing: 1, marginTop: Space.sm, marginLeft: Space.xs },
+  section: { borderRadius: Radius.md, overflow: 'hidden' },
+  menuItem: { flexDirection: 'row', alignItems: 'center', padding: Space.md, gap: Space.md, minHeight: TOUCH },
+  menuIcon: { width: 40, height: 40, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
   menuContent: { flex: 1 },
-  menuLabel: { fontSize: 15, fontWeight: '500' },
-  menuDesc: { fontSize: 12, marginTop: 1 },
-  version: { textAlign: 'center', color: Colors.grey[400], fontSize: 12, marginTop: 8 },
+  menuLabel: { ...Type.body, fontWeight: '500' },
+  menuDesc: { ...Type.caption, marginTop: 1 },
+  version: { textAlign: 'center', ...Type.caption, marginTop: Space.sm },
 });

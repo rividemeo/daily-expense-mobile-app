@@ -8,6 +8,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Colors } from '@/shared/constants/colors';
+import { Space } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ProgressBarProps {
   progress: number;
@@ -26,6 +28,7 @@ export function ProgressBar({
   style,
   animated = true,
 }: ProgressBarProps) {
+  const { colors } = useTheme();
   const clampedProgress = Math.min(Math.max(progress, 0), 1);
   const width = useSharedValue(0);
 
@@ -57,7 +60,7 @@ export function ProgressBar({
     <View style={style}>
       {(showLabel || label) && (
         <View style={styles.labelRow}>
-          {label ? <Text variant="labelSmall" style={{ color: Colors.grey[600] }}>{label}</Text> : null}
+          {label ? <Text variant="labelSmall" style={{ color: colors.textSecondary }}>{label}</Text> : null}
           {showLabel && (
             <Text variant="labelSmall" style={{ color }}>
               {Math.round(clampedProgress * 100)}%
@@ -65,7 +68,7 @@ export function ProgressBar({
           )}
         </View>
       )}
-      <View style={[styles.track, { height, borderRadius: height / 2 }]}>
+      <View style={[styles.track, { height, borderRadius: height / 2, backgroundColor: colors.track }]}>
         <Animated.View
           style={[
             styles.fill,
@@ -81,7 +84,6 @@ export function ProgressBar({
 const styles = StyleSheet.create({
   track: {
     width: '100%',
-    backgroundColor: Colors.grey[200],
     overflow: 'hidden',
   },
   fill: {
@@ -91,6 +93,6 @@ const styles = StyleSheet.create({
   labelRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: Space.xs,
   },
 });

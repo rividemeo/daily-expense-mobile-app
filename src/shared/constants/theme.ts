@@ -1,6 +1,19 @@
 import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 import { Colors } from './colors';
 
+// One scale for every screen, so they stop drifting apart.
+export const Space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
+export const Radius = { sm: 8, md: 12, lg: 16, pill: 999 } as const;
+export const Type = {
+  caption: { fontSize: 12, lineHeight: 16 },
+  body: { fontSize: 14, lineHeight: 20 },
+  bodyLg: { fontSize: 16, lineHeight: 22 },
+  title: { fontSize: 18, lineHeight: 24, fontWeight: '600' as const },
+  headline: { fontSize: 22, lineHeight: 28, fontWeight: '600' as const },
+  display: { fontSize: 30, lineHeight: 36, fontWeight: '700' as const, letterSpacing: -0.5 },
+} as const;
+export const TOUCH = 44; // minimum tap target
+
 export const LightTheme = {
   ...MD3LightTheme,
   colors: {
@@ -11,7 +24,7 @@ export const LightTheme = {
     secondaryContainer: Colors.primary[50],
     background: Colors.light.background,
     surface: Colors.light.surface,
-    surfaceVariant: Colors.grey[100],
+    surfaceVariant: Colors.light.surfaceAlt,
     error: Colors.error.main,
     errorContainer: Colors.error.background,
     onPrimary: Colors.white,
@@ -23,14 +36,14 @@ export const LightTheme = {
     outlineVariant: Colors.light.divider,
     elevation: {
       level0: 'transparent',
-      level1: Colors.white,
-      level2: Colors.grey[50],
-      level3: Colors.grey[100],
-      level4: Colors.grey[100],
-      level5: Colors.grey[200],
+      level1: Colors.light.surface,
+      level2: Colors.light.surface,
+      level3: Colors.light.surfaceAlt,
+      level4: Colors.light.surfaceAlt,
+      level5: Colors.light.surfaceAlt,
     },
   },
-  roundness: 12,
+  roundness: Radius.md,
 };
 
 export const DarkTheme = {
@@ -40,12 +53,12 @@ export const DarkTheme = {
     primary: Colors.primary.light,
     primaryContainer: Colors.primary[800],
     secondary: Colors.primary[300],
-    secondaryContainer: Colors.primary[700],
+    secondaryContainer: Colors.primary[900],
     background: Colors.dark.background,
     surface: Colors.dark.surface,
-    surfaceVariant: '#334155',
+    surfaceVariant: Colors.dark.surfaceAlt,
     error: Colors.error.light,
-    errorContainer: '#7F1D1D',
+    errorContainer: Colors.error.dark,
     onPrimary: Colors.primary[900],
     onPrimaryContainer: Colors.primary[100],
     onBackground: Colors.dark.text,
@@ -56,11 +69,11 @@ export const DarkTheme = {
     elevation: {
       level0: 'transparent',
       level1: Colors.dark.surface,
-      level2: '#253044',
-      level3: '#2A3549',
-      level4: '#2D394E',
-      level5: '#303D52',
+      level2: Colors.dark.surface,
+      level3: Colors.dark.surfaceAlt,
+      level4: Colors.dark.surfaceAlt,
+      level5: Colors.dark.surfaceAlt,
     },
   },
-  roundness: 12,
+  roundness: Radius.md,
 };

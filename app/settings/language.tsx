@@ -4,10 +4,10 @@ import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/shared/constants/colors';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useTheme } from '@/hooks/useTheme';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 
 const LANGUAGES = [
   { code: 'en', name: 'English', native: 'English', flag: '🇺🇸' },
@@ -23,7 +23,7 @@ const LANGUAGES = [
 ];
 
 export default function LanguageSettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, accent } = useTheme();
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
   const { showSnackbar } = useUIStore();
@@ -39,23 +39,31 @@ export default function LanguageSettingsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Language</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: TOUCH }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.list}>
-        {LANGUAGES.map((lang) => {
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        {LANGUAGES.map((lang, index) => {
           const isSelected = lang.code === selectedLanguage;
           return (
             <TouchableOpacity
               key={lang.code}
-              style={[styles.item, { backgroundColor: colors.surface }]}
+              style={[styles.item, index > 0 && { borderTopWidth: 1, borderTopColor: colors.divider }]}
               onPress={() => handleSelect(lang.code, lang.name)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
             >
-              <View style={styles.flagBox}>
+              <View style={[styles.flagBox, { backgroundColor: colors.surfaceAlt }]}>
                 <Text style={styles.flag}>{lang.flag}</Text>
               </View>
               <View style={styles.info}>
@@ -63,11 +71,12 @@ export default function LanguageSettingsScreen() {
                 <Text style={[styles.native, { color: colors.textSecondary }]}>{lang.native}</Text>
               </View>
               {isSelected && (
-                <MaterialCommunityIcons name="check-circle" size={22} color={Colors.primary.main} />
+                <MaterialCommunityIcons name="check-circle" size={22} color={accent} />
               )}
             </TouchableOpacity>
           );
         })}
+        </View>
         <Text style={[styles.note, { color: colors.textTertiary }]}>
           More languages coming soon. App content will be translated in a future update.
         </Text>
@@ -82,37 +91,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 18, fontWeight: '700' },
-  list: { padding: 16, gap: 8, paddingBottom: 32 },
+  backBtn: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  title: { ...Type.title },
+  list: { padding: Space.lg, gap: Space.sm, paddingBottom: Space.xxl },
+  card: { borderRadius: Radius.lg, borderWidth: 1, overflow: 'hidden' },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
+    minHeight: TOUCH,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
+    gap: Space.md,
   },
   flagBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.grey[100],
+    width: 40,
+    height: 40,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  flag: { fontSize: 24 },
+  flag: { fontSize: 22 },
   info: { flex: 1 },
-  name: { fontSize: 15, fontWeight: '500' },
-  native: { fontSize: 12, marginTop: 2 },
-  note: { fontSize: 12, textAlign: 'center', marginTop: 8 },
+  name: { ...Type.body, fontWeight: '500' },
+  native: { ...Type.caption, marginTop: 2 },
+  note: { ...Type.caption, textAlign: 'center', marginTop: Space.sm },
 });

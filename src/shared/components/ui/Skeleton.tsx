@@ -7,7 +7,8 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { Colors } from '@/shared/constants/colors';
+import { Space, Radius } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface SkeletonProps {
   width?: number | `${number}%`;
@@ -16,7 +17,8 @@ interface SkeletonProps {
   style?: ViewStyle;
 }
 
-export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style }: SkeletonProps) {
+export function Skeleton({ width = '100%', height = 16, borderRadius = Radius.sm, style }: SkeletonProps) {
+  const { colors } = useTheme();
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style 
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: Colors.grey[200],
+          backgroundColor: colors.track,
         },
         animatedStyle,
         style,
@@ -51,7 +53,7 @@ export function Skeleton({ width = '100%', height = 16, borderRadius = 8, style 
 export function TransactionSkeleton() {
   return (
     <View style={styles.transactionSkeleton}>
-      <Skeleton width={44} height={44} borderRadius={22} />
+      <Skeleton width={44} height={44} borderRadius={Radius.md} />
       <View style={styles.txContent}>
         <Skeleton width={'60%'} height={14} />
         <View style={styles.gap4} />
@@ -65,8 +67,9 @@ export function TransactionSkeleton() {
 }
 
 export function CardSkeleton({ lines = 3 }: { lines?: number }) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.cardSkeleton}>
+    <View style={[styles.cardSkeleton, { backgroundColor: colors.surface }]}>
       {Array.from({ length: lines }).map((_, i) => (
         <Skeleton
           key={i}
@@ -83,8 +86,8 @@ const styles = StyleSheet.create({
   transactionSkeleton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    gap: 12,
+    padding: Space.lg,
+    gap: Space.md,
   },
   txContent: {
     flex: 1,
@@ -92,13 +95,12 @@ const styles = StyleSheet.create({
   txAmount: {
     alignItems: 'flex-end',
   },
-  gap4: { height: 4 },
+  gap4: { height: Space.xs },
   cardSkeleton: {
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: Colors.white,
+    padding: Space.lg,
+    borderRadius: Radius.lg,
   },
   skeletonLine: {
-    marginBottom: 8,
+    marginBottom: Space.sm,
   },
 });

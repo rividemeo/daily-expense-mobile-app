@@ -7,9 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/shared/constants/colors';
 import { useUIStore } from '@/stores/uiStore';
 import { useTheme } from '@/hooks/useTheme';
+import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 
 export default function PrivacySettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, isDark } = useTheme();
+  const danger = isDark ? Colors.error.light : Colors.error.main;
   const { showSnackbar } = useUIStore();
 
   const [biometricLock, setBiometricLock] = useState(false);
@@ -30,16 +32,21 @@ export default function PrivacySettingsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Privacy & Security</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: TOUCH }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>SECURITY</Text>
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <SettingRow
             icon="fingerprint"
             iconColor="#7C3AED"
@@ -49,7 +56,7 @@ export default function PrivacySettingsScreen() {
             onToggle={() => toggle(biometricLock, setBiometricLock, 'Biometric lock')}
             colors={colors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: colors.divider }} />
           <SettingRow
             icon="eye-off-outline"
             iconColor="#EC4899"
@@ -59,7 +66,7 @@ export default function PrivacySettingsScreen() {
             onToggle={() => toggle(hideAmounts, setHideAmounts, 'Amount hiding')}
             colors={colors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: colors.divider }} />
           <SettingRow
             icon="camera-off-outline"
             iconColor="#F59E0B"
@@ -72,7 +79,7 @@ export default function PrivacySettingsScreen() {
         </View>
 
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>DATA & PRIVACY</Text>
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <SettingRow
             icon="chart-bar"
             iconColor="#3B82F6"
@@ -82,7 +89,7 @@ export default function PrivacySettingsScreen() {
             onToggle={() => toggle(analyticsEnabled, setAnalyticsEnabled, 'Analytics')}
             colors={colors}
           />
-          <Divider />
+          <Divider style={{ backgroundColor: colors.divider }} />
           <SettingRow
             icon="bug-outline"
             iconColor="#10B981"
@@ -95,22 +102,22 @@ export default function PrivacySettingsScreen() {
         </View>
 
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>LEGAL</Text>
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <TouchableOpacity style={styles.linkRow}>
-            <MaterialCommunityIcons name="shield-outline" size={20} color={Colors.primary.main} />
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <TouchableOpacity style={styles.linkRow} accessibilityRole="button">
+            <MaterialCommunityIcons name="shield-outline" size={20} color={accent} />
             <Text style={[styles.linkLabel, { color: colors.text }]}>Privacy Policy</Text>
             <MaterialCommunityIcons name="open-in-new" size={16} color={colors.textTertiary} />
           </TouchableOpacity>
-          <Divider />
-          <TouchableOpacity style={styles.linkRow}>
-            <MaterialCommunityIcons name="file-document-outline" size={20} color={Colors.primary.main} />
+          <Divider style={{ backgroundColor: colors.divider }} />
+          <TouchableOpacity style={styles.linkRow} accessibilityRole="button">
+            <MaterialCommunityIcons name="file-document-outline" size={20} color={accent} />
             <Text style={[styles.linkLabel, { color: colors.text }]}>Terms of Service</Text>
             <MaterialCommunityIcons name="open-in-new" size={16} color={colors.textTertiary} />
           </TouchableOpacity>
-          <Divider />
-          <TouchableOpacity style={styles.linkRow}>
-            <MaterialCommunityIcons name="delete-outline" size={20} color={Colors.error.main} />
-            <Text style={[styles.linkLabel, { color: Colors.error.main }]}>Delete My Data</Text>
+          <Divider style={{ backgroundColor: colors.divider }} />
+          <TouchableOpacity style={styles.linkRow} accessibilityRole="button">
+            <MaterialCommunityIcons name="delete-outline" size={20} color={danger} />
+            <Text style={[styles.linkLabel, { color: danger }]}>Delete My Data</Text>
             <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textTertiary} />
           </TouchableOpacity>
         </View>
@@ -145,7 +152,7 @@ function SettingRow({
         <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
         <Text style={[styles.settingDesc, { color: colors.textSecondary }]}>{description}</Text>
       </View>
-      <Switch value={value} onValueChange={onToggle} color={Colors.primary.main} />
+      <Switch value={value} onValueChange={onToggle} color={Colors.primary.main} accessibilityLabel={label} />
     </View>
   );
 }
@@ -156,42 +163,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.grey[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: { fontSize: 18, fontWeight: '700' },
-  content: { padding: 16, gap: 8, paddingBottom: 40 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginTop: 8, marginLeft: 4 },
-  section: { borderRadius: 12, overflow: 'hidden' },
+  backBtn: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
+  title: { ...Type.title },
+  content: { padding: Space.lg, gap: Space.sm, paddingBottom: Space.xxl },
+  sectionLabel: { ...Type.caption, fontWeight: '600', letterSpacing: 1, marginTop: Space.sm, marginLeft: Space.xs },
+  section: { borderRadius: Radius.lg, borderWidth: 1, overflow: 'hidden' },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    gap: 12,
+    minHeight: TOUCH,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
+    gap: Space.md,
   },
   iconBox: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   settingInfo: { flex: 1 },
-  settingLabel: { fontSize: 15, fontWeight: '500' },
-  settingDesc: { fontSize: 12, marginTop: 2, lineHeight: 16 },
+  settingLabel: { ...Type.body, fontWeight: '500' },
+  settingDesc: { ...Type.caption, marginTop: 2 },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    gap: 12,
+    minHeight: TOUCH,
+    paddingHorizontal: Space.lg,
+    paddingVertical: Space.md,
+    gap: Space.md,
   },
-  linkLabel: { flex: 1, fontSize: 15, fontWeight: '500' },
+  linkLabel: { flex: 1, ...Type.body, fontWeight: '500' },
 });
