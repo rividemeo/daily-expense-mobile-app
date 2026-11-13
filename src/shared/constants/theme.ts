@@ -1,16 +1,18 @@
 import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 import { Colors } from './colors';
 
-// One scale for every screen, so they stop drifting apart.
+// iOS text styles (largeTitle, title2, headline, body, subhead, footnote, caption1).
 export const Space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
-export const Radius = { sm: 8, md: 12, lg: 16, pill: 999 } as const;
+export const Radius = { sm: 8, md: 10, lg: 12, xl: 20, pill: 999 } as const;
 export const Type = {
-  caption: { fontSize: 12, lineHeight: 16 },
-  body: { fontSize: 14, lineHeight: 20 },
-  bodyLg: { fontSize: 16, lineHeight: 22 },
-  title: { fontSize: 18, lineHeight: 24, fontWeight: '600' as const },
-  headline: { fontSize: 22, lineHeight: 28, fontWeight: '600' as const },
-  display: { fontSize: 30, lineHeight: 36, fontWeight: '700' as const, letterSpacing: -0.5 },
+  caption: { fontSize: 12, lineHeight: 16 }, // caption1
+  footnote: { fontSize: 13, lineHeight: 18 },
+  body: { fontSize: 15, lineHeight: 20 }, // subhead
+  bodyLg: { fontSize: 17, lineHeight: 22 }, // body
+  title: { fontSize: 17, lineHeight: 22, fontWeight: '600' as const }, // headline
+  title3: { fontSize: 20, lineHeight: 25, fontWeight: '600' as const },
+  headline: { fontSize: 22, lineHeight: 28, fontWeight: '700' as const }, // title2
+  display: { fontSize: 34, lineHeight: 41, fontWeight: '700' as const, letterSpacing: 0.37 }, // largeTitle
 } as const;
 export const TOUCH = 44; // minimum tap target
 
@@ -59,7 +61,7 @@ export const DarkTheme = {
     surfaceVariant: Colors.dark.surfaceAlt,
     error: Colors.error.light,
     errorContainer: Colors.error.dark,
-    onPrimary: Colors.primary[900],
+    onPrimary: Colors.white,
     onPrimaryContainer: Colors.primary[100],
     onBackground: Colors.dark.text,
     onSurface: Colors.dark.text,

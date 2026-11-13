@@ -1,43 +1,29 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Radius } from '@/shared/constants/theme';
 
 interface CategoryIconProps {
   icon: string;
   color: string;
   size?: number;
+  /** Kept for old callers; icons are now solid like iOS Settings/Wallet. */
   backgroundOpacity?: number;
 }
 
-export function CategoryIcon({
-  icon,
-  color,
-  size = 44,
-  backgroundOpacity = 0.15,
-}: CategoryIconProps) {
-  const iconSize = size * 0.5;
-
+// Solid coloured circle with a white glyph, like transaction icons in Apple Wallet.
+export function CategoryIcon({ icon, color, size = 44 }: CategoryIconProps) {
   return (
     <View
-      style={[
-        styles.container,
-        {
-          width: size,
-          height: size,
-          borderRadius: Math.min(Radius.md, size / 2), // rounded square
-          backgroundColor: color + Math.round(backgroundOpacity * 255).toString(16).padStart(2, '0'),
-        },
-      ]}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
-      <MaterialCommunityIcons name={icon as any} size={iconSize} color={color} />
+      <MaterialCommunityIcons name={icon as any} size={size * 0.52} color="#FFFFFF" />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

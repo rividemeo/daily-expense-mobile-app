@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, TextInput as RNTextInput } from 'react-native';
 import { TextInput, Text, HelperText } from 'react-native-paper';
 import { Radius, Type } from '@/shared/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
@@ -12,6 +12,8 @@ interface CurrencyInputProps {
   label?: string;
   error?: string;
   style?: object;
+  /** Big centred number like the iOS Wallet / Cash amount entry. */
+  large?: boolean;
 }
 
 export function CurrencyInput({
@@ -21,9 +23,10 @@ export function CurrencyInput({
   label = 'Amount',
   error,
   style,
+  large,
 }: CurrencyInputProps) {
   const currencyInfo = getCurrencyByCode(currency);
-  const { accent } = useTheme();
+  const { accent, colors, sys } = useTheme();
 
   const handleChange = (text: string) => {
     const cleaned = text.replace(/[^0-9.]/g, '');
@@ -32,6 +35,29 @@ export function CurrencyInput({
     if (parts[1] && parts[1].length > 2) return;
     onChangeValue(cleaned);
   };
+
+  if (large) {
+    return (
+      <View style={[styles.hero, style]}>
+        {/* Symbol and number are drawn as one centred line; an invisible input on top takes the typing. */}
+        <View style={styles.heroRow}>
+          <Text style={[styles.heroSymbol, { color: colors.textSecondary }]}>{currencyInfo.symbol}</Text>
+          <Text style={[styles.heroValue, { color: value ? colors.text : colors.textTertiary }]} numberOfLines={1} adjustsFontSizeToFit>
+            {value ? Number(value).toLocaleString(currencyInfo.locale, { maximumFractionDigits: 2 }) : '0'}
+          </Text>
+          <RNTextInput
+            value={value}
+            onChangeText={handleChange}
+            keyboardType="decimal-pad"
+            accessibilityLabel={label}
+            caretHidden
+            style={styles.heroInput}
+          />
+        </View>
+        {error ? <Text style={[Type.footnote, { color: sys.red }]}>{error}</Text> : null}
+      </View>
+    );
+  }
 
   return (
     <View style={style}>
@@ -62,6 +88,11 @@ export function CurrencyInput({
 }
 
 const styles = StyleSheet.create({
+  hero: { alignItems: 'center', gap: 4 },
+  heroRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', alignSelf: 'stretch', paddingHorizontal: 16 },
+  heroSymbol: { fontSize: 28, fontWeight: '600', marginRight: 6 },
+  heroValue: { fontSize: 46, lineHeight: 56, fontWeight: '700', flexShrink: 1 },
+  heroInput: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: 0 },
   input: {
     backgroundColor: 'transparent',
     fontSize: Type.headline.fontSize,

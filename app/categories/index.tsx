@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
-import {
-  FlatList,
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
-import { Text, SegmentedButtons, Portal, Modal, FAB } from 'react-native-paper';
+import { ScrollView, StyleSheet, View, Pressable, TextInput, Alert } from 'react-native';
+import { Text, Portal, Modal } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Colors } from '@/shared/constants/colors';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
-import { Input } from '@/shared/components/ui/Input';
-import { Button } from '@/shared/components/ui/Button';
+import { LargeTitle, HeaderButton } from '@/shared/components/ui/LargeTitle';
+import { ListGroup } from '@/shared/components/ui/ListGroup';
+import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useTheme } from '@/hooks/useTheme';
@@ -32,8 +26,12 @@ const categorySchema = z.object({
 
 type CategoryForm = z.infer<typeof categorySchema>;
 
+// Separator starts under the name, past the 30pt icon.
+const ICON_INSET = Space.lg + 30 + Space.md;
+
 export default function CategoriesScreen() {
-  const { colors } = useTheme();
+  const { colors, accent, sys } = useTheme();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const { categories, addCategory, deleteCategory } = useCategoryStore();
   const [type, setType] = useState<TransactionType>('expense');
@@ -54,6 +52,11 @@ export default function CategoriesScreen() {
     defaultValues: { name: '', icon: CATEGORY_ICONS[0], color: Colors.categoryColors[0] },
   });
 
+  const close = () => {
+    setModalVisible(false);
+    reset();
+  };
+
   const onSubmit = (data: CategoryForm) => {
     const now = new Date().toISOString();
     addCategory({
@@ -67,8 +70,7 @@ export default function CategoriesScreen() {
       createdAt: now,
       updatedAt: now,
     });
-    setModalVisible(false);
-    reset();
+    close();
   };
 
   const handleDelete = (cat: Category) => {
@@ -84,111 +86,123 @@ export default function CategoriesScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={[styles.backBtn, { backgroundColor: colors.surfaceAlt }]}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>Categories</Text>
-        <View style={{ width: TOUCH }} />
-      </View>
+      <LargeTitle back title="Categories" right={<HeaderButton icon="add" label="Add Category" onPress={() => setModalVisible(true)} />} />
 
-      <View style={styles.typeToggle}>
-        <SegmentedButtons
-          value={type}
-          onValueChange={(v) => setType(v as TransactionType)}
-          buttons={[
-            { value: 'expense', label: 'Expense' },
-            { value: 'income', label: 'Income' },
-          ]}
-        />
-      </View>
-
-      <FlatList
-        data={filtered}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.grid}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.catCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            onLongPress={() => handleDelete(item)}
-            accessibilityRole="button"
-            accessibilityLabel={item.name}
-            accessibilityHint="Long press to delete"
-          >
-            <CategoryIcon icon={item.icon} color={item.color} size={52} />
-            <Text style={[styles.catName, { color: colors.text }]} numberOfLines={1}>
-              {item.name}
-            </Text>
-            {item.isDefault && (
-              <Text style={[styles.defaultBadge, { color: colors.textTertiary }]}>Default</Text>
-            )}
-          </TouchableOpacity>
-        )}
+      <SegmentedControl
+        value={type}
+        onChange={setType}
+        options={[
+          { value: 'expense', label: 'Expense' },
+          { value: 'income', label: 'Income' },
+        ]}
+        style={styles.segment}
       />
 
-      <FAB
-        icon="plus"
-        label="Add Category"
-        onPress={() => setModalVisible(true)}
-        style={styles.fab}
-      />
+      <ScrollView contentContainerStyle={styles.list}>
+        <ListGroup separatorInset={ICON_INSET} footer="Long press a custom category to delete it.">
+          {filtered.map((cat) => (
+            <Pressable
+              key={cat.id}
+              onLongPress={() => handleDelete(cat)}
+              accessibilityRole="button"
+              accessibilityLabel={cat.name}
+              accessibilityHint="Long press to delete"
+              style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.pressed }]}
+            >
+              <CategoryIcon icon={cat.icon} color={cat.color} size={30} />
+              <Text style={[Type.bodyLg, styles.flex, { color: colors.text }]} numberOfLines={1}>
+                {cat.name}
+              </Text>
+              {cat.isDefault && <Text style={[Type.bodyLg, { color: colors.textSecondary }]}>Default</Text>}
+            </Pressable>
+          ))}
+        </ListGroup>
+      </ScrollView>
 
       <Portal>
         <Modal
           visible={modalVisible}
-          onDismiss={() => { setModalVisible(false); reset(); }}
-          contentContainerStyle={[styles.modal, { backgroundColor: colors.surface }]}
+          onDismiss={close}
+          style={styles.sheetWrap}
+          contentContainerStyle={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + Space.lg }]}
         >
-          <Text style={[styles.modalTitle, { color: colors.text }]}>New Category</Text>
-
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, value } }) => (
-              <Input label="Category Name" value={value} onChangeText={onChange} error={errors.name?.message} style={styles.field} />
-            )}
-          />
-
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Color</Text>
-          <View style={styles.colorRow}>
-            {Colors.categoryColors.map((c) => (
-              <TouchableOpacity
-                key={c}
-                style={[styles.colorDot, { backgroundColor: c }, selectedColor === c && [styles.colorDotSelected, { borderColor: colors.text }]]}
-                onPress={() => { setSelectedColor(c); setValue('color', c); }}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityLabel={`Colour ${c}`}
-                accessibilityState={{ selected: selectedColor === c }}
-              />
-            ))}
+          <View style={[styles.grabber, { backgroundColor: colors.textTertiary }]} />
+          <View style={styles.bar}>
+            <Pressable onPress={close} style={styles.barBtn} accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={8}>
+              <Text style={[Type.bodyLg, { color: accent }]}>Cancel</Text>
+            </Pressable>
+            <Text style={[styles.barTitle, { color: colors.text }]}>New Category</Text>
+            <Pressable
+              onPress={handleSubmit(onSubmit)}
+              style={[styles.barBtn, styles.barRight]}
+              accessibilityRole="button"
+              accessibilityLabel="Create Category"
+              hitSlop={8}
+            >
+              <Text style={[Type.title, { color: accent }]}>Save</Text>
+            </Pressable>
           </View>
 
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Icon</Text>
-          <View style={styles.iconGrid}>
-            {CATEGORY_ICONS.slice(0, 20).map((icon) => (
-              <TouchableOpacity
-                key={icon}
-                style={[styles.iconItem, { borderColor: colors.border }, selectedIcon === icon && { backgroundColor: selectedColor + '22', borderColor: selectedColor }]}
-                onPress={() => { setSelectedIcon(icon); setValue('icon', icon); }}
-                accessibilityRole="button"
-                accessibilityLabel={`Icon ${icon}`}
-                accessibilityState={{ selected: selectedIcon === icon }}
-              >
-                <MaterialCommunityIcons name={icon as any} size={24} color={selectedIcon === icon ? selectedColor : colors.textSecondary} />
-              </TouchableOpacity>
-            ))}
-          </View>
+          <View style={styles.sheetBody}>
+            <View>
+              <ListGroup>
+                <Controller
+                  control={control}
+                  name="name"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      value={value}
+                      onChangeText={onChange}
+                      placeholder="Category Name"
+                      placeholderTextColor={colors.textTertiary}
+                      accessibilityLabel="Category Name"
+                      maxLength={30}
+                      style={[Type.bodyLg, styles.input, { color: colors.text }]}
+                    />
+                  )}
+                />
+              </ListGroup>
+              {errors.name ? <Text style={[styles.error, { color: sys.red }]}>{errors.name.message}</Text> : null}
+            </View>
 
-          <Button onPress={handleSubmit(onSubmit)} fullWidth size="large" style={styles.field}>
-            Create Category
-          </Button>
+            <ListGroup header="Color">
+              <View style={styles.grid}>
+                {Colors.categoryColors.map((c) => (
+                  <Pressable
+                    key={c}
+                    style={[styles.ring, { borderColor: selectedColor === c ? colors.textTertiary : 'transparent' }]}
+                    onPress={() => { setSelectedColor(c); setValue('color', c); }}
+                    hitSlop={4}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Colour ${c}`}
+                    accessibilityState={{ selected: selectedColor === c }}
+                  >
+                    <View style={[styles.dot, { backgroundColor: c }]} />
+                  </Pressable>
+                ))}
+              </View>
+            </ListGroup>
+
+            <ListGroup header="Icon">
+              <View style={styles.grid}>
+                {CATEGORY_ICONS.slice(0, 20).map((icon) => {
+                  const on = selectedIcon === icon;
+                  return (
+                    <Pressable
+                      key={icon}
+                      style={[styles.iconItem, { backgroundColor: on ? selectedColor : colors.surfaceAlt }]}
+                      onPress={() => { setSelectedIcon(icon); setValue('icon', icon); }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Icon ${icon}`}
+                      accessibilityState={{ selected: on }}
+                    >
+                      <MaterialCommunityIcons name={icon as any} size={22} color={on ? '#FFFFFF' : colors.textSecondary} />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ListGroup>
+          </View>
         </Modal>
       </Portal>
     </SafeAreaView>
@@ -197,44 +211,22 @@ export default function CategoriesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Space.lg,
-    paddingVertical: Space.md,
-  },
-  backBtn: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
-  title: { ...Type.title },
-  typeToggle: { paddingHorizontal: Space.lg, marginBottom: Space.lg },
-  grid: { padding: Space.md, gap: Space.sm },
-  catCard: {
-    flex: 1,
-    margin: Space.xs,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    padding: Space.lg,
-    alignItems: 'center',
-    gap: Space.sm,
-    minHeight: 100,
-  },
-  catName: { ...Type.caption, fontWeight: '600', textAlign: 'center' },
-  defaultBadge: { ...Type.caption },
-  fab: { position: 'absolute', bottom: Space.xl, right: Space.lg, backgroundColor: Colors.primary.main },
-  modal: { margin: Space.lg, borderRadius: Radius.lg, padding: Space.xl },
-  modalTitle: { ...Type.title, marginBottom: Space.lg },
-  field: { marginBottom: Space.md },
-  fieldLabel: { ...Type.body, fontWeight: '600', marginBottom: Space.sm },
-  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.md, marginBottom: Space.lg },
-  colorDot: { width: 32, height: 32, borderRadius: Radius.pill },
-  colorDotSelected: { borderWidth: 3 },
-  iconGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm, marginBottom: Space.lg },
-  iconItem: {
-    width: TOUCH,
-    height: TOUCH,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  flex: { flex: 1 },
+  segment: { marginHorizontal: Space.lg, marginVertical: Space.sm },
+  list: { paddingTop: Space.md, paddingBottom: Space.xxl },
+  row: { minHeight: TOUCH, flexDirection: 'row', alignItems: 'center', gap: Space.md, paddingHorizontal: Space.lg, paddingVertical: 7 },
+  sheetWrap: { justifyContent: 'flex-end', marginBottom: 0 },
+  sheet: { borderTopLeftRadius: 14, borderTopRightRadius: 14, elevation: 0, shadowOpacity: 0, justifyContent: 'flex-start' },
+  grabber: { width: 36, height: 5, borderRadius: 3, alignSelf: 'center', marginTop: 6, opacity: 0.5 },
+  bar: { height: TOUCH + 4, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Space.lg },
+  barBtn: { minWidth: 70, minHeight: TOUCH, justifyContent: 'center' },
+  barRight: { alignItems: 'flex-end' },
+  barTitle: { ...Type.title, flex: 1, textAlign: 'center' },
+  sheetBody: { gap: Space.xl, paddingTop: Space.sm },
+  input: { minHeight: TOUCH, paddingHorizontal: Space.lg, paddingVertical: 11 },
+  error: { ...Type.footnote, marginHorizontal: Space.xxl, marginTop: 6 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: Space.sm, padding: Space.md },
+  ring: { padding: 2, borderWidth: 2.5, borderRadius: Radius.pill },
+  dot: { width: 34, height: 34, borderRadius: Radius.pill },
+  iconItem: { width: TOUCH, height: TOUCH, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
 });

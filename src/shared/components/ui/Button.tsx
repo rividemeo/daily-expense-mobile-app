@@ -1,13 +1,14 @@
 import React from 'react';
-import { StyleSheet, ViewStyle } from 'react-native';
-import { Button as PaperButton, ActivityIndicator } from 'react-native-paper';
-import { Colors } from '@/shared/constants/colors';
-import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
+import { Pressable, StyleSheet, ViewStyle, ActivityIndicator, View } from 'react-native';
+import { Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Radius, Type, TOUCH, Space } from '@/shared/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
 interface ButtonProps {
   onPress: () => void;
   children: React.ReactNode;
+  /** contained = filled tint, outlined = gray "tinted" button, text = plain link. */
   variant?: 'contained' | 'outlined' | 'text';
   size?: 'small' | 'medium' | 'large';
   loading?: boolean;
@@ -18,6 +19,7 @@ interface ButtonProps {
   color?: 'primary' | 'success' | 'error' | 'warning';
 }
 
+// iOS buttons: filled (blue, white text), tinted (light fill, blue text) or plain text.
 export function Button({
   onPress,
   children,
@@ -30,54 +32,48 @@ export function Button({
   fullWidth = false,
   color = 'primary',
 }: ButtonProps) {
-  const { accent } = useTheme();
-  const buttonColor =
-    color === 'primary'
-      ? variant === 'contained' ? Colors.primary.main : accent
-      : color === 'success'
-      ? Colors.success.main
-      : color === 'error'
-      ? Colors.error.main
-      : Colors.warning.main;
+  const { sys, colors } = useTheme();
+  const tint = color === 'success' ? sys.green : color === 'error' ? sys.red : color === 'warning' ? sys.orange : sys.blue;
+  const filled = variant === 'contained';
+  const fg = filled ? '#FFFFFF' : tint;
+  const bg = filled ? tint : variant === 'outlined' ? colors.surfaceAlt : 'transparent';
+  const height = size === 'large' ? 50 : size === 'small' ? 32 : TOUCH;
+  const label = size === 'small' ? Type.footnote : Type.bodyLg;
 
   return (
-    <PaperButton
-      mode={variant}
+    <Pressable
       onPress={onPress}
-      loading={loading}
       disabled={disabled || loading}
-      icon={icon}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       hitSlop={size === 'small' ? { top: 6, bottom: 6 } : undefined}
-      buttonColor={variant === 'contained' ? buttonColor : undefined}
-      textColor={variant === 'contained' ? Colors.white : buttonColor}
-      style={[
+      style={({ pressed }) => [
+        styles.base,
+        { height, backgroundColor: bg, borderRadius: size === 'small' ? Radius.pill : Radius.lg },
+        variant === 'text' && styles.text,
         fullWidth && styles.fullWidth,
-        size === 'large' && styles.large,
-        size === 'small' && styles.small,
+        (disabled || loading) && styles.disabled,
+        pressed && styles.pressed,
         style,
       ]}
-      contentStyle={[
-        size === 'medium' && styles.mediumContent,
-        size === 'large' && styles.largeContent,
-        size === 'small' && styles.smallContent,
-      ]}
-      labelStyle={[
-        size === 'large' && styles.largeLabel,
-        size === 'small' && styles.smallLabel,
-      ]}
     >
-      {children}
-    </PaperButton>
+      {loading ? (
+        <ActivityIndicator color={fg} />
+      ) : (
+        <View style={styles.inner}>
+          {icon ? <MaterialCommunityIcons name={icon as any} size={size === 'small' ? 15 : 19} color={fg} /> : null}
+          <Text style={[label, { color: fg, fontWeight: '600' }]}>{children}</Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  base: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: Space.lg },
+  inner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  text: { paddingHorizontal: Space.sm },
   fullWidth: { width: '100%' },
-  large: { borderRadius: Radius.md, height: 52 },
-  small: { borderRadius: Radius.sm },
-  mediumContent: { minHeight: TOUCH },
-  largeContent: { height: 52, paddingHorizontal: Space.sm },
-  smallContent: { height: 32, paddingHorizontal: Space.xs },
-  largeLabel: { ...Type.bodyLg, fontWeight: '600' },
-  smallLabel: { ...Type.caption },
+  disabled: { opacity: 0.4 },
+  pressed: { opacity: 0.6 },
 });

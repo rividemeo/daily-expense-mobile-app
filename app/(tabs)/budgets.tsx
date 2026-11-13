@@ -1,28 +1,22 @@
 import React, { useState } from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
-import { Text, Portal, Modal, SegmentedButtons } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, View, Pressable, RefreshControl } from 'react-native';
+import { Text, Portal, Modal } from 'react-native-paper';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { Colors } from '@/shared/constants/colors';
 import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { ProgressBar } from '@/shared/components/ui/ProgressBar';
-import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { CurrencyInput } from '@/shared/components/ui/CurrencyInput';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { CardSkeleton } from '@/shared/components/ui/Skeleton';
-import { FAB } from '@/shared/components/ui/FAB';
+import { LargeTitle, HeaderButton } from '@/shared/components/ui/LargeTitle';
+import { ListGroup } from '@/shared/components/ui/ListGroup';
+import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { useBudgetsQuery, useCreateBudget, useDeleteBudget } from '@/hooks/useBudgets';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -40,9 +34,12 @@ const budgetSchema = z.object({
 
 type BudgetForm = z.infer<typeof budgetSchema>;
 
+const ICON = 32;
+const BUDGET_ROW_INSET = Space.lg + ICON + Space.md;
+
 export default function BudgetsScreen() {
-  const { colors, accent, isDark } = useTheme();
-  const onAccent = isDark ? Colors.primary[900] : Colors.white;
+  const { colors, sys, accent, isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [modalVisible, setModalVisible] = useState(false);
@@ -57,6 +54,7 @@ export default function BudgetsScreen() {
   const expenseCategories = getCategoriesByType('expense');
   const currency = user?.currency ?? 'IDR';
   const { startDate, endDate } = getCurrentMonthRange();
+  const positive = isDark ? sys.green : '#248A3D';
 
   const {
     control,
@@ -77,6 +75,11 @@ export default function BudgetsScreen() {
     setRefreshing(false);
   };
 
+  const closeModal = () => {
+    setModalVisible(false);
+    reset();
+  };
+
   const onSubmit = (data: BudgetForm) => {
     createBudget.mutate(
       {
@@ -92,12 +95,7 @@ export default function BudgetsScreen() {
         userId: user?.id ?? '',
         isShared: false,
       },
-      {
-        onSuccess: () => {
-          setModalVisible(false);
-          reset();
-        },
-      }
+      { onSuccess: closeModal }
     );
   };
 
@@ -105,43 +103,67 @@ export default function BudgetsScreen() {
   const totalSpent = budgets?.reduce((s, b) => s + b.spent, 0) ?? 0;
   const totalRemaining = totalBudget - totalSpent;
 
+  const summary: [string, number, string][] = [
+    ['Budget', totalBudget, colors.text],
+    ['Spent', totalSpent, colors.text],
+    ['Remaining', totalRemaining, totalRemaining < 0 ? sys.red : positive],
+  ];
+
+  const capsule = (selected: boolean, label: string, onPress: () => void, icon: React.ReactNode, key?: string) => (
+    <Pressable
+      key={key}
+      onPress={onPress}
+      style={[styles.capsule, { backgroundColor: selected ? accent : colors.surfaceAlt }]}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      accessibilityLabel={label}
+    >
+      {icon}
+      <Text style={[Type.body, { color: selected ? '#FFFFFF' : colors.text }]} numberOfLines={1}>{label}</Text>
+    </Pressable>
+  );
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Budgets</Text>
-      </View>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+      <LargeTitle
+        title="Budgets"
+        right={<HeaderButton icon="add" label="Add budget" onPress={() => setModalVisible(true)} />}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} colors={[accent]} />}
       >
-        {/* Summary */}
-        {!isLoading && budgets && budgets.length > 0 && (
-          <View style={[styles.summary, { backgroundColor: colors.hero }]}>
-            <View style={styles.summaryItem}>
-              <Text style={[styles.summaryLabel, { color: colors.onHeroMuted }]}>Total Budget</Text>
-              <Text style={[styles.summaryValue, { color: colors.onHero }]}>{formatCurrency(totalBudget, currency, { compact: true })}</Text>
-            </View>
-            <View style={styles.summarySep} />
-            <View style={styles.summaryItem}>
-              <Text style={[styles.summaryLabel, { color: colors.onHeroMuted }]}>Spent</Text>
-              <Text style={[styles.summaryValue, { color: colors.onHero }]}>{formatCurrency(totalSpent, currency, { compact: true })}</Text>
-            </View>
-            <View style={styles.summarySep} />
-            <View style={styles.summaryItem}>
-              <Text style={[styles.summaryLabel, { color: colors.onHeroMuted }]}>Remaining</Text>
-              <Text style={[styles.summaryValue, { color: totalRemaining < 0 ? Colors.error.light : Colors.success.light }]}>
-                {formatCurrency(totalRemaining, currency, { compact: true })}
-              </Text>
-            </View>
-          </View>
-        )}
-
         {isLoading ? (
-          [1, 2, 3].map((i) => <CardSkeleton key={i} />)
+          <View style={styles.skeletons}>
+            {[1, 2, 3].map((i) => <CardSkeleton key={i} />)}
+          </View>
         ) : budgets && budgets.length > 0 ? (
-          budgets.map((budget) => <BudgetCard key={budget.id} budget={budget} currency={currency} getCategoryById={getCategoryById} onDelete={() => deleteBudget.mutate(budget.id)} colors={colors} />)
+          <>
+            <View style={[styles.summary, { backgroundColor: colors.surface }]}>
+              {summary.map(([label, value, color]) => (
+                <View key={label} style={styles.summaryItem}>
+                  <Text style={[Type.footnote, { color: colors.textSecondary }]}>{label}</Text>
+                  <Text style={[styles.summaryValue, { color }]} numberOfLines={1} adjustsFontSizeToFit>
+                    {formatCurrency(value, currency, { compact: true })}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            <ListGroup header="This period" separatorInset={BUDGET_ROW_INSET}>
+              {budgets.map((budget) => (
+                <BudgetRow
+                  key={budget.id}
+                  budget={budget}
+                  currency={currency}
+                  getCategoryById={getCategoryById}
+                  onDelete={() => deleteBudget.mutate(budget.id)}
+                />
+              ))}
+            </ListGroup>
+          </>
         ) : (
           <EmptyState
             icon="wallet-outline"
@@ -151,33 +173,36 @@ export default function BudgetsScreen() {
             onAction={() => setModalVisible(true)}
           />
         )}
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
-      <FAB icon="plus" onPress={() => setModalVisible(true)} />
-
-      {/* Add Budget Modal */}
+      {/* Add Budget sheet */}
       <Portal>
         <Modal
           visible={modalVisible}
-          onDismiss={() => { setModalVisible(false); reset(); }}
-          contentContainerStyle={[styles.modal, { backgroundColor: colors.surface }]}
+          onDismiss={closeModal}
+          style={styles.sheetWrap}
+          contentContainerStyle={[styles.sheet, { backgroundColor: colors.background, paddingBottom: insets.bottom + Space.lg }]}
         >
-          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>New Budget</Text>
-            <TouchableOpacity
-              onPress={() => { setModalVisible(false); reset(); }}
-              style={styles.iconBtn}
+          <View style={[styles.grabber, { backgroundColor: colors.textTertiary }]} />
+          <View style={styles.sheetBar}>
+            <Pressable onPress={closeModal} style={styles.sheetBtn} accessibilityRole="button" accessibilityLabel="Cancel">
+              <Text style={[Type.bodyLg, { color: accent }]}>Cancel</Text>
+            </Pressable>
+            <Text style={[Type.title, { color: colors.text }]}>New Budget</Text>
+            <Pressable
+              onPress={handleSubmit(onSubmit)}
+              disabled={createBudget.isPending}
+              style={[styles.sheetBtn, styles.sheetBtnRight]}
               accessibilityRole="button"
-              accessibilityLabel="Close"
+              accessibilityLabel="Add budget"
+              accessibilityState={{ disabled: createBudget.isPending, busy: createBudget.isPending }}
             >
-              <MaterialCommunityIcons name="close" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
+              <Text style={[Type.title, { color: accent, opacity: createBudget.isPending ? 0.4 : 1 }]}>Add</Text>
+            </Pressable>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={styles.modalContent}>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <View style={styles.sheetContent}>
               <Controller
                 control={control}
                 name="name"
@@ -192,16 +217,14 @@ export default function BudgetsScreen() {
                   <CurrencyInput value={value} onChangeValue={onChange} currency={currency} error={errors.amount?.message} />
                 )}
               />
-
               <Controller
                 control={control}
                 name="period"
                 render={({ field: { onChange, value } }) => (
-                  <SegmentedButtons
+                  <SegmentedControl
                     value={value}
-                    onValueChange={onChange}
-                    theme={{ colors: { secondaryContainer: accent, onSecondaryContainer: onAccent } }}
-                    buttons={[
+                    onChange={onChange}
+                    options={[
                       { value: 'weekly', label: 'Weekly' },
                       { value: 'monthly', label: 'Monthly' },
                       { value: 'yearly', label: 'Yearly' },
@@ -210,34 +233,25 @@ export default function BudgetsScreen() {
                 )}
               />
 
-              <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Category (optional)</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catRow}>
-                <TouchableOpacity
-                  style={[styles.catChip, { borderColor: colors.border }, !selectedCategoryId && { borderColor: accent, backgroundColor: accent + '1F' }]}
-                  onPress={() => setValue('categoryId', '')}
-                  accessibilityRole="button"
-                  accessibilityLabel="All categories"
-                >
-                  <MaterialCommunityIcons name="all-inclusive" size={20} color={!selectedCategoryId ? accent : colors.textSecondary} />
-                  <Text style={{ ...Type.caption, color: !selectedCategoryId ? accent : colors.textSecondary }}>All</Text>
-                </TouchableOpacity>
-                {expenseCategories.map((cat) => (
-                  <TouchableOpacity
-                    key={cat.id}
-                    style={[styles.catChip, { borderColor: colors.border }, selectedCategoryId === cat.id && { borderColor: cat.color, backgroundColor: cat.color + '1F' }]}
-                    onPress={() => setValue('categoryId', cat.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={cat.name}
-                  >
-                    <CategoryIcon icon={cat.icon} color={cat.color} size={24} />
-                    <Text style={{ ...Type.caption, color: selectedCategoryId === cat.id ? cat.color : colors.text }} numberOfLines={1}>{cat.name}</Text>
-                  </TouchableOpacity>
-                ))}
+              <Text style={[Type.footnote, styles.fieldLabel, { color: colors.textSecondary }]}>CATEGORY (OPTIONAL)</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.capsuleRow}>
+                {capsule(
+                  !selectedCategoryId,
+                  'All',
+                  () => setValue('categoryId', ''),
+                  <MaterialCommunityIcons name="all-inclusive" size={16} color={!selectedCategoryId ? '#FFFFFF' : colors.textSecondary} />
+                )}
+                {expenseCategories.map((cat) => {
+                  const on = selectedCategoryId === cat.id;
+                  return capsule(
+                    on,
+                    cat.name,
+                    () => setValue('categoryId', cat.id),
+                    <MaterialCommunityIcons name={cat.icon as any} size={16} color={on ? '#FFFFFF' : cat.color} />,
+                    cat.id
+                  );
+                })}
               </ScrollView>
-
-              <Button onPress={handleSubmit(onSubmit)} loading={createBudget.isPending} fullWidth size="large">
-                Create Budget
-              </Button>
             </View>
           </ScrollView>
         </Modal>
@@ -246,79 +260,61 @@ export default function BudgetsScreen() {
   );
 }
 
-function BudgetCard({
+function BudgetRow({
   budget,
   currency,
   getCategoryById,
   onDelete,
-  colors,
 }: {
   budget: Budget;
   currency: string;
   getCategoryById: (id: string) => any;
   onDelete: () => void;
-  colors: any;
 }) {
-  const { accent, isDark } = useTheme();
+  const { colors, sys, isDark } = useTheme();
   const category = budget.categoryId ? getCategoryById(budget.categoryId) : null;
   const progress = budget.amount > 0 ? budget.spent / budget.amount : 0;
   const remaining = budget.amount - budget.spent;
   const isOverBudget = remaining < 0;
 
   return (
-    <View style={[styles.budgetCard, { backgroundColor: colors.surface }]}>
-      <View style={styles.budgetCardHeader}>
-        <View style={styles.budgetCardLeft}>
-          {category ? (
-            <CategoryIcon icon={category.icon} color={category.color} size={40} />
-          ) : (
-            <View style={[styles.budgetAllIcon, { backgroundColor: colors.surfaceAlt }]}>
-              <MaterialCommunityIcons name="all-inclusive" size={20} color={accent} />
-            </View>
-          )}
-          <View>
-            <Text style={[styles.budgetCardName, { color: colors.text }]}>{budget.name}</Text>
-            <Text style={[styles.budgetCardPeriod, { color: colors.textSecondary }]}>
-              {budget.period.charAt(0).toUpperCase() + budget.period.slice(1)} budget
-            </Text>
-          </View>
+    <View style={styles.row}>
+      <View style={styles.rowHeader}>
+        <CategoryIcon icon={category?.icon ?? 'all-inclusive'} color={category?.color ?? sys.gray} size={ICON} />
+        <View style={styles.rowTexts}>
+          <Text style={[Type.bodyLg, { color: colors.text }]} numberOfLines={1}>{budget.name}</Text>
+          <Text style={[Type.footnote, { color: colors.textSecondary }]}>
+            {budget.period.charAt(0).toUpperCase() + budget.period.slice(1)}
+          </Text>
         </View>
-        <TouchableOpacity
+        <Pressable
           onPress={onDelete}
-          style={styles.iconBtn}
+          style={styles.deleteBtn}
           accessibilityRole="button"
           accessibilityLabel={`Delete budget ${budget.name}`}
         >
-          <MaterialCommunityIcons name="trash-can-outline" size={18} color={isDark ? Colors.error.light : Colors.error.main} />
-        </TouchableOpacity>
+          {({ pressed }) => <Ionicons name="trash-outline" size={20} color={sys.red} style={{ opacity: pressed ? 0.4 : 1 }} />}
+        </Pressable>
       </View>
 
-      <ProgressBar
-        progress={progress}
-        height={8}
-        showLabel
-        label={`${formatCurrency(budget.spent, currency, { compact: true })} / ${formatCurrency(budget.amount, currency, { compact: true })}`}
-        style={styles.progressBar}
-      />
-
-      <View style={styles.budgetCardFooter}>
-        <Text style={[styles.remainingText, { color: isOverBudget ? (isDark ? Colors.error.light : Colors.error.main) : (isDark ? Colors.success.light : Colors.success.main) }]}>
+      <View style={styles.rowBody}>
+        <ProgressBar
+          progress={progress}
+          height={6}
+          showLabel
+          label={`${formatCurrency(budget.spent, currency, { compact: true })} of ${formatCurrency(budget.amount, currency, { compact: true })}`}
+        />
+        <Text
+          style={[
+            Type.footnote,
+            styles.remaining,
+            { color: isOverBudget ? sys.red : progress >= 0.8 ? sys.orange : isDark ? sys.green : '#248A3D' },
+          ]}
+        >
           {isOverBudget
             ? `${formatCurrency(Math.abs(remaining), currency)} over budget`
-            : `${formatCurrency(remaining, currency)} remaining`}
+            : `${formatCurrency(remaining, currency)} left${progress >= 0.8 ? ' · Near limit' : ''}`}
         </Text>
-        {progress >= 0.8 && progress < 1 && (
-          <View style={[styles.alertBadge, { backgroundColor: isDark ? 'rgba(251,191,36,0.12)' : Colors.warning.background }]}>
-            <MaterialCommunityIcons name="alert-circle" size={14} color={isDark ? Colors.warning.light : Colors.warning.main} />
-            <Text style={[styles.alertText, { color: isDark ? Colors.warning.light : Colors.warning.main }]}>Warning</Text>
-          </View>
-        )}
-        {progress >= 1 && (
-          <View style={[styles.alertBadge, { backgroundColor: isDark ? 'rgba(248,113,113,0.12)' : Colors.error.background }]}>
-            <MaterialCommunityIcons name="alert" size={14} color={isDark ? Colors.error.light : Colors.error.main} />
-            <Text style={[styles.alertText, { color: isDark ? Colors.error.light : Colors.error.main }]}>Over budget!</Text>
-          </View>
-        )}
       </View>
     </View>
   );
@@ -326,77 +322,32 @@ function BudgetCard({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: Space.lg,
-    paddingTop: Space.sm,
-    paddingBottom: Space.md,
-  },
-  title: { ...Type.headline },
-  content: { padding: Space.lg, gap: Space.md, paddingBottom: 100 },
-  summary: {
-    borderRadius: Radius.lg,
-    padding: Space.xl,
+  content: { paddingTop: Space.sm, paddingBottom: Space.xxl, gap: Space.xl },
+  skeletons: { marginHorizontal: Space.lg, gap: Space.md },
+  summary: { marginHorizontal: Space.lg, borderRadius: Radius.lg, padding: Space.lg, flexDirection: 'row', gap: Space.md },
+  summaryItem: { flex: 1, gap: 2 },
+  summaryValue: { ...Type.headline },
+  row: { paddingHorizontal: Space.lg, paddingVertical: Space.md, gap: Space.sm },
+  rowHeader: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
+  rowTexts: { flex: 1 },
+  rowBody: { marginLeft: ICON + Space.md, gap: Space.xs },
+  remaining: { fontWeight: '500' },
+  deleteBtn: { width: TOUCH, height: TOUCH, alignItems: 'flex-end', justifyContent: 'center', marginVertical: -Space.sm },
+  sheetWrap: { justifyContent: 'flex-end', margin: 0 },
+  sheet: { borderTopLeftRadius: 14, borderTopRightRadius: 14, maxHeight: '90%' },
+  grabber: { width: 36, height: 5, borderRadius: 2.5, alignSelf: 'center', marginTop: 6, opacity: 0.5 },
+  sheetBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Space.lg },
+  sheetBtn: { minWidth: 70, minHeight: TOUCH, justifyContent: 'center' },
+  sheetBtnRight: { alignItems: 'flex-end' },
+  sheetContent: { padding: Space.lg, gap: Space.lg },
+  fieldLabel: { marginBottom: -Space.sm, paddingHorizontal: Space.xs },
+  capsuleRow: { gap: Space.sm },
+  capsule: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  summaryItem: { flex: 1, alignItems: 'center' },
-  summaryLabel: { ...Type.caption, marginBottom: Space.xs },
-  summaryValue: { ...Type.title, fontWeight: '700' },
-  summarySep: { width: 1, height: 40, backgroundColor: 'rgba(255,255,255,0.2)' },
-  budgetCard: {
-    borderRadius: Radius.lg,
-    padding: Space.lg,
-    gap: Space.md,
-  },
-  budgetCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  budgetCardLeft: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
-  budgetAllIcon: {
-    width: 40,
-    height: 40,
+    gap: 6,
+    height: 34,
+    paddingHorizontal: Space.md,
     borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  budgetCardName: { ...Type.bodyLg, fontWeight: '600' },
-  budgetCardPeriod: { ...Type.caption },
-  iconBtn: { width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' },
-  progressBar: {},
-  budgetCardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  remainingText: { ...Type.body, fontWeight: '600' },
-  alertBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Space.xs,
-    paddingHorizontal: Space.sm,
-    paddingVertical: 3,
-    borderRadius: Radius.sm,
-  },
-  alertText: { ...Type.caption, fontWeight: '600' },
-  modal: {
-    margin: Space.lg,
-    borderRadius: Radius.lg,
-    overflow: 'hidden',
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Space.md,
-    paddingLeft: Space.xl,
-    paddingRight: Space.md,
-    borderBottomWidth: 1,
-  },
-  modalTitle: { ...Type.title, fontWeight: '700' },
-  modalContent: { padding: Space.xl, gap: Space.lg },
-  fieldLabel: { ...Type.body, fontWeight: '600' },
-  catRow: { gap: Space.sm },
-  catChip: {
-    alignItems: 'center',
-    padding: Space.sm,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    width: 68,
-    gap: Space.xs,
   },
 });

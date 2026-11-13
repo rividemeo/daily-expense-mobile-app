@@ -18,7 +18,6 @@ export interface ParsedTx {
 
 export interface ParsedStatement {
   transactions: ParsedTx[];
-  skippedOwnTransfers: number;
 }
 
 const ENTRY =
@@ -32,10 +31,11 @@ const ALIASES: [RegExp, string][] = [
 ];
 
 // Generic list of common Indonesian chains and food words. First match wins.
-// ponytail: keyword guessing; unknown names land in "Other" and can be recategorised in the app.
+// ponytail: keyword guessing; unknown names land in "Other". When the user recategorises one
+// in the app it is remembered on the phone (categoryMemory) and wins on the next import.
 const CATEGORY_RULES: [RegExp, string][] = [
-  [/top-?up|\bDANA\b|\bOVO\b|SHOPEEPAY|ATM withdrawal/i, 'cat_expense_other'],
-  [/INDOMARET|ALFA|SUPERINDO|HYPERMART|LOTTE|TRANSMART|HERO\b|GIANT/i, 'cat_household'],
+  [/top-?up|\bDANA\b|\bOVO\b|SHOPEEPAY|FLAZZ|ATM withdrawal/i, 'cat_topup'],
+  [/INDOMARET|ALFA|SUPERINDO|HYPERMART|LOTTE|TRANSMART|HERO\b|GIANT|GALON|\bLPG\b|\bGAS\b/i, 'cat_household'],
   [/TOKOPEDIA|SHOPEE|LAZADA|BLIBLI|IKEA|ZALORA/i, 'cat_shopping'],
   [/PARKIR|GRAB|GOJEK|GOCAR|\bKRL\b|\bMRT\b|PERTAMINA|SPBU|\bTOL\b|TRANSJAKARTA|BLUEBIRD/i, 'cat_transport'],
   [/TELKOMSEL|\bPLN\b|INDIHOME|\bXL\b|BPJS|PDAM|BIZNET|FIRSTMEDIA|INDOSAT/i, 'cat_utilities'],
@@ -86,10 +86,24 @@ function clean(raw: string, typeLine: string): Clean {
   return { description: titleCase(text || typeLine), method: 'bank_transfer' };
 }
 
-function categoryFor(type: TransactionType, description: string): string {
-  if (type === 'income') return /SALARY|GAJI|PAYROLL/i.test(description) ? 'cat_salary' : 'cat_income_other';
-  for (const [re, cat] of CATEGORY_RULES) if (re.test(description)) return cat;
-  return 'cat_expense_other';
+/** "Warung Bu" and "WARUNG BU" are the same shop. */
+export const memoryKey = (description: string) => description.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+/** Categories the user picked by hand, by memoryKey(description). */
+export type CategoryMemory = Record<string, { type: TransactionType; categoryId: string }>;
+
+// Income is salary only. Money in from a person is a friend paying back a split bill:
+// a negative expense, so it lowers spending. Money out to a person is family or rent.
+function classify(dir: string, c: Clean, memory: CategoryMemory): { type: TransactionType; categoryId: string } {
+  const learned = memory[memoryKey(c.description)];
+  if (dir === 'CR') {
+    if (learned) return learned;
+    if (/SALARY|GAJI|PAYROLL/i.test(c.description)) return { type: 'income', categoryId: 'cat_salary' };
+    return c.person ? { type: 'expense', categoryId: 'cat_payback' } : { type: 'income', categoryId: 'cat_income_other' };
+  }
+  if (learned?.type === 'expense') return learned;
+  for (const [re, cat] of CATEGORY_RULES) if (re.test(c.description)) return { type: 'expense', categoryId: cat };
+  return { type: 'expense', categoryId: c.person ? 'cat_family' : 'cat_expense_other' };
 }
 
 function hash(s: string): string {
@@ -102,7 +116,7 @@ const num = (s: string) => Number(s.replace(/,/g, ''));
 const letters = (s: string) => s.replace(/[^A-Z]/gi, '').toUpperCase();
 const HEADER = /^(MUTASI|NO\.|NAMA|HALAMAN|JENIS|PERIODE|MATA|CATATAN|TANGGAL|Bersambung|Apabila|Rekening|dengan|tercantum)/;
 
-export function parseBcaStatement(lines: string[]): ParsedStatement {
+export function parseBcaStatement(lines: string[], memory: CategoryMemory = {}): ParsedStatement {
   const holder = lines.map((l) => l.match(/^NAMA\s*:\s*(.+)$/)).find(Boolean)?.[1] ?? '';
   const period = lines.map((l) => l.match(/^PERIODE\s*:.*-\s*(\d{2})\/(\d{2})\/(\d{4})/)).find(Boolean);
   const periodEnd = period ? `${period[3]}-${period[2]}-${period[1]}` : new Date().toISOString().slice(0, 10);
@@ -123,30 +137,33 @@ export function parseBcaStatement(lines: string[]): ParsedStatement {
 
   const seen: Record<string, number> = {};
   const transactions: ParsedTx[] = [];
-  let skippedOwnTransfers = 0;
   for (const e of entries) {
     const c = clean(e.raw, e.type);
-    // Moving money between your own accounts is neither spending nor income.
-    if (holder && c.person && letters(c.person).startsWith(letters(holder))) {
-      skippedOwnTransfers++;
-      continue;
-    }
+    // Your own other account: money in is salary (below); money out pays the house loan,
+    // so it falls through to classify() like any transfer to a person -> Family & Housing.
+    const own = !!holder && !!c.person && letters(c.person).startsWith(letters(holder));
     const year = (e.date ?? periodEnd).slice(0, 4);
     const date = e.date ?? (c.ddmm ? `${year}-${c.ddmm.slice(2)}-${c.ddmm.slice(0, 2)}` : periodEnd);
-    const type: TransactionType = e.dir === 'CR' ? 'income' : 'expense';
+    // Salary lands in the user's own other account first, then gets moved here.
+    // ponytail: every transfer in from yourself counts as salary; a remembered category overrides it.
+    const { type, categoryId } =
+      own && e.dir === 'CR' && !memory[memoryKey(c.description)]
+        ? { type: 'income' as const, categoryId: 'cat_salary' }
+        : classify(e.dir, c, memory);
     const key = `${date}|${e.amount}|${e.dir}|${c.description}`;
     seen[key] = (seen[key] ?? 0) + 1; // same shop, same amount, same day twice = two rows
     transactions.push({
       id: `bca_${hash(key)}_${seen[key]}`,
       date,
-      amount: e.amount,
+      // Money in that isn't income (a payback) lowers spending.
+      amount: e.dir === 'CR' && type === 'expense' ? -e.amount : e.amount,
       type,
       description: c.description,
-      categoryId: categoryFor(type, c.description),
+      categoryId,
       paymentMethod: c.method,
     });
   }
-  return { transactions, skippedOwnTransfers };
+  return { transactions };
 }
 
 // Invented rows in BCA's layout (no real data). Run: npx tsx src/features/import/bcaStatement.ts
@@ -175,20 +192,29 @@ export function selfCheck() {
     'BI-FAST DB',
     '01/01/2026 TRANSFER DR 008 SITI AMINAH 75,000.00 CR',
     'BI-FAST CR',
+    '01/01/2026 TRANSFER DR 451 BUDI SANTOSO 9,000,000.00 CR',
+    'BI-FAST CR',
   ];
-  const { transactions: t, skippedOwnTransfers } = parseBcaStatement(sample);
+  const { transactions: t } = parseBcaStatement(sample);
   const eq = (a: unknown, b: unknown, what: string) => {
     if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`${what}: ${JSON.stringify(a)} != ${JSON.stringify(b)}`);
   };
-  eq(t.length, 7, 'count');
-  eq(skippedOwnTransfers, 1, 'own transfer skipped');
+  eq(t.length, 9, 'count');
+  eq([t[6].type, t[6].categoryId, t[6].amount], ['expense', 'cat_family', 500000], 'money out to own account is housing');
+  eq([t[8].type, t[8].categoryId, t[8].amount], ['income', 'cat_salary', 9000000], 'money in from own account is salary');
   eq([t[0].date, t[0].description, t[0].categoryId, t[0].amount], ['2026-01-05', 'Indomaret', 'cat_household', 17500], 'PEND QR row');
-  eq([t[1].description, t[1].categoryId], ['GoPay top-up', 'cat_expense_other'], 'VA row');
-  eq(t[2].description, 'Transfer: Sewa Kos Andi', 'FTSCY row');
+  eq([t[1].description, t[1].categoryId], ['GoPay top-up', 'cat_topup'], 'VA row');
+  eq([t[2].description, t[2].categoryId], ['Transfer: Sewa Kos Andi', 'cat_family'], 'FTSCY row');
   eq([t[3].categoryId, t[3].id === t[4].id], ['cat_food', false], 'twin rows stay two');
-  eq([t[5].description, t[5].amount], ['ATM withdrawal', 1000000], 'ATM row');
-  eq([t[6].type, t[6].description], ['income', 'Transfer from Siti Aminah'], 'incoming transfer');
+  eq([t[5].description, t[5].amount, t[5].categoryId], ['ATM withdrawal', 1000000, 'cat_topup'], 'ATM row');
+  eq(
+    [t[7].type, t[7].categoryId, t[7].amount, t[7].description],
+    ['expense', 'cat_payback', -75000, 'Transfer from Siti Aminah'],
+    'payback lowers spending',
+  );
   eq(t.some((x) => /\d{6,}/.test(x.description)), false, 'no reference numbers kept');
   eq(parseBcaStatement(sample).transactions.map((x) => x.id), t.map((x) => x.id), 'ids stable');
+  const learned = parseBcaStatement(sample, { [memoryKey('Warung Bu')]: { type: 'expense', categoryId: 'cat_shopping' } });
+  eq([learned.transactions[3].categoryId, learned.transactions[3].id], ['cat_shopping', t[3].id], 'remembered choice wins, id same');
   return 'ok';
 }

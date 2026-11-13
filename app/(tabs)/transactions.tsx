@@ -1,35 +1,32 @@
 import React, { useState, useCallback } from 'react';
-import {
-  FlatList,
-  StyleSheet,
-  View,
-  RefreshControl,
-  TouchableOpacity,
-} from 'react-native';
-import { Text, Chip, Searchbar, Menu, Divider } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { FlatList, StyleSheet, View, RefreshControl, TextInput, Pressable } from 'react-native';
+import { Menu } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQueryClient } from '@tanstack/react-query';
-import { Colors } from '@/shared/constants/colors';
-import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
-import { TransactionItem } from '@/features/transactions/components/TransactionItem';
+import { Space, Radius, Type } from '@/shared/constants/theme';
+import { TransactionItem, TX_ROW_INSET } from '@/features/transactions/components/TransactionItem';
 import { TransactionSkeleton } from '@/shared/components/ui/Skeleton';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { FAB } from '@/shared/components/ui/FAB';
+import { LargeTitle, HeaderButton } from '@/shared/components/ui/LargeTitle';
+import { ListGroup } from '@/shared/components/ui/ListGroup';
+import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { useTransactionsQuery } from '@/hooks/useTransactions';
 import { useAuthStore } from '@/stores/authStore';
 import { useTheme } from '@/hooks/useTheme';
 import { groupTransactionsByDate } from '@/shared/utils/formatDate';
 import { Transaction } from '@/types/models';
 
+type TypeFilter = 'all' | 'income' | 'expense';
+
 export default function TransactionsScreen() {
-  const { colors, accent, isDark } = useTheme();
+  const { colors, accent } = useTheme();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [menuVisible, setMenuVisible] = useState(false);
 
   const filters = {
@@ -38,7 +35,7 @@ export default function TransactionsScreen() {
     pageSize: 50,
   };
 
-  const { data: transactions, isLoading, refetch } = useTransactionsQuery(filters);
+  const { data: transactions, isLoading } = useTransactionsQuery(filters);
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(async () => {
@@ -51,13 +48,7 @@ export default function TransactionsScreen() {
   const grouped = groupTransactionsByDate(transactions ?? []);
 
   const renderItem = ({ item }: { item: { date: string; label: string; items: Transaction[] } }) => (
-    <View>
-      <View style={[styles.dateHeader, { backgroundColor: colors.background }]}>
-        <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>{item.label}</Text>
-        <Text style={[styles.dateTotal, { color: colors.textSecondary }]}>
-          {item.items.length} transaction{item.items.length !== 1 ? 's' : ''}
-        </Text>
-      </View>
+    <ListGroup header={item.label} separatorInset={TX_ROW_INSET} style={styles.group}>
       {item.items.map((tx) => (
         <TransactionItem
           key={tx.id}
@@ -66,76 +57,65 @@ export default function TransactionsScreen() {
           onPress={() => router.push(`/transaction/${tx.id}`)}
         />
       ))}
-    </View>
+    </ListGroup>
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Transactions</Text>
-        <Menu
-          visible={menuVisible}
-          onDismiss={() => setMenuVisible(false)}
-          anchor={
-            <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
-              style={[styles.filterButton, { backgroundColor: colors.surfaceAlt }]}
-              accessibilityRole="button"
-              accessibilityLabel="Filter and sort options"
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
+      <LargeTitle
+        title="Transactions"
+        right={
+          <>
+            <Menu
+              visible={menuVisible}
+              onDismiss={() => setMenuVisible(false)}
+              anchor={
+                <HeaderButton icon="ellipsis-horizontal-circle" label="Filter and sort options" onPress={() => setMenuVisible(true)} />
+              }
             >
-              <MaterialCommunityIcons name="filter-variant" size={22} color={colors.text} />
-            </TouchableOpacity>
-          }
-        >
-          <Menu.Item onPress={() => router.push('/settings/export')} title="Export" leadingIcon="export" />
-          <Menu.Item onPress={() => router.push('/settings/import')} title="Import" leadingIcon="import" />
-          <Divider />
-          <Menu.Item onPress={() => {}} title="Sort by Date" leadingIcon="sort-calendar-descending" />
-          <Menu.Item onPress={() => {}} title="Sort by Amount" leadingIcon="sort-numeric-descending" />
-        </Menu>
-      </View>
-
-      {/* Search */}
-      <Searchbar
-        placeholder="Search transactions..."
-        value={search}
-        onChangeText={setSearch}
-        style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}
-        inputStyle={{ color: colors.text }}
-        iconColor={colors.textSecondary}
+              <Menu.Item onPress={() => router.push('/settings/export')} title="Export" leadingIcon="export" />
+              <Menu.Item onPress={() => router.push('/settings/import')} title="Import" leadingIcon="import" />
+            </Menu>
+            <HeaderButton icon="add" label="Add transaction" onPress={() => router.push('/transaction/new')} />
+          </>
+        }
       />
 
-      {/* Filter Chips */}
-      <View style={styles.chips}>
-        {(['all', 'income', 'expense'] as const).map((t) => (
-          <Chip
-            key={t}
-            selected={typeFilter === t}
-            onPress={() => setTypeFilter(t)}
-            hitSlop={{ top: 6, bottom: 6 }}
-            style={[
-              styles.chip,
-              { backgroundColor: colors.surfaceAlt },
-              typeFilter === t && { backgroundColor: accent },
-            ]}
-            textStyle={[
-              styles.chipText,
-              { color: colors.textSecondary },
-              typeFilter === t && { color: isDark ? Colors.primary[900] : Colors.white },
-            ]}
-          >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
-          </Chip>
-        ))}
+      <View style={[styles.search, { backgroundColor: colors.surfaceAlt }]}>
+        <Ionicons name="search" size={17} color={colors.textTertiary} />
+        <TextInput
+          placeholder="Search"
+          placeholderTextColor={colors.textTertiary}
+          value={search}
+          onChangeText={setSearch}
+          style={[styles.searchInput, { color: colors.text }]}
+          returnKeyType="search"
+          accessibilityLabel="Search transactions"
+        />
+        {search ? (
+          <Pressable onPress={() => setSearch('')} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
+            <Ionicons name="close-circle" size={17} color={colors.textTertiary} />
+          </Pressable>
+        ) : null}
       </View>
 
+      <SegmentedControl<TypeFilter>
+        value={typeFilter}
+        onChange={setTypeFilter}
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'expense', label: 'Expenses' },
+          { value: 'income', label: 'Income' },
+        ]}
+        style={styles.segments}
+      />
+
       {isLoading ? (
-        <FlatList
-          data={[1, 2, 3, 4, 5, 6]}
-          keyExtractor={(i) => String(i)}
-          renderItem={() => <TransactionSkeleton />}
-        />
+        <ListGroup separatorInset={TX_ROW_INSET} style={styles.group}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <TransactionSkeleton key={i} />
+          ))}
+        </ListGroup>
       ) : grouped.length > 0 ? (
         <FlatList
           data={grouped}
@@ -143,73 +123,37 @@ export default function TransactionsScreen() {
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
           refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor={accent}
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} colors={[accent]} />
           }
         />
       ) : (
         <EmptyState
           icon="swap-horizontal"
           title="No transactions found"
-          description={
-            search
-              ? `No results for "${search}"`
-              : 'Add your first transaction to get started'
-          }
+          description={search ? `No results for "${search}"` : 'Add your first transaction to get started'}
           actionLabel={search ? undefined : 'Add Transaction'}
           onAction={search ? undefined : () => router.push('/transaction/new')}
         />
       )}
-
-      <FAB icon="plus" onPress={() => router.push('/transaction/new')} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
+  search: {
+    height: 36,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: Space.lg,
-    paddingTop: Space.sm,
-    paddingBottom: Space.md,
-  },
-  title: { ...Type.headline },
-  filterButton: {
-    width: TOUCH,
-    height: TOUCH,
-    borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchBar: {
+    gap: 6,
     marginHorizontal: Space.lg,
-    marginBottom: Space.md,
+    paddingHorizontal: Space.sm,
     borderRadius: Radius.md,
-    elevation: 0,
-    borderWidth: 1,
   },
-  chips: {
-    flexDirection: 'row',
-    paddingHorizontal: Space.lg,
-    gap: Space.sm,
-    marginBottom: Space.sm,
-  },
-  chip: { borderRadius: Radius.pill },
-  chipText: { ...Type.body },
-  dateHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Space.lg,
-    paddingVertical: Space.sm,
-  },
-  dateLabel: { ...Type.body, fontWeight: '600' },
-  dateTotal: { ...Type.caption },
-  listContent: { paddingBottom: 100 },
+  searchInput: { flex: 1, ...Type.bodyLg, paddingVertical: 0 },
+  segments: { marginHorizontal: Space.lg, marginTop: Space.md, marginBottom: Space.sm },
+  group: { marginTop: Space.xl },
+  listContent: { paddingBottom: Space.xxl },
 });

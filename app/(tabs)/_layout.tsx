@@ -1,11 +1,19 @@
+import { StyleSheet, ColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/hooks/useTheme';
-import { Colors } from '@/shared/constants/colors';
-import { Space, Type } from '@/shared/constants/theme';
+
+type Icon = keyof typeof Ionicons.glyphMap;
+// iOS tab bar: filled glyph when selected, outline otherwise.
+const tab = (title: string, on: Icon, off: Icon) => ({
+  title,
+  tabBarIcon: ({ color, focused }: { color: ColorValue; focused: boolean }) => (
+    <Ionicons name={focused ? on : off} color={color} size={25} />
+  ),
+});
 
 export default function TabsLayout() {
-  const { colors, accent } = useTheme();
+  const { colors, accent, isDark } = useTheme();
 
   return (
     <Tabs
@@ -14,71 +22,23 @@ export default function TabsLayout() {
         tabBarActiveTintColor: accent,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
+          backgroundColor: isDark ? 'rgba(22,22,24,0.94)' : 'rgba(249,249,249,0.94)',
+          borderTopColor: colors.divider,
+          borderTopWidth: StyleSheet.hairlineWidth,
           elevation: 0,
-          shadowColor: Colors.black,
-          shadowOffset: { width: 0, height: -1 },
-          shadowOpacity: 0.04,
-          shadowRadius: 4,
           height: 64,
-          paddingBottom: Space.sm,
-          paddingTop: Space.xs,
+          paddingTop: 4,
+          paddingBottom: 4,
         },
-        tabBarLabelStyle: {
-          // 11px so "Transactions" fits five tabs on a 375px phone.
-          fontSize: 11,
-          lineHeight: 14,
-          fontWeight: '500',
-        },
+        // 10pt like iOS so "Transactions" fits five tabs on a 375px phone.
+        tabBarLabelStyle: { fontSize: 10, lineHeight: 13, fontWeight: '500' },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Dashboard',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="view-dashboard" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="transactions"
-        options={{
-          title: 'Transactions',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="swap-horizontal" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="budgets"
-        options={{
-          title: 'Budgets',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="wallet" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="reports"
-        options={{
-          title: 'Reports',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="chart-bar" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: 'More',
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="menu" color={color} size={size} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={tab('Summary', 'home', 'home-outline')} />
+      <Tabs.Screen name="transactions" options={tab('Transactions', 'list', 'list-outline')} />
+      <Tabs.Screen name="budgets" options={tab('Budgets', 'wallet', 'wallet-outline')} />
+      <Tabs.Screen name="reports" options={tab('Reports', 'bar-chart', 'bar-chart-outline')} />
+      <Tabs.Screen name="more" options={tab('More', 'ellipsis-horizontal-circle', 'ellipsis-horizontal-circle-outline')} />
     </Tabs>
   );
 }

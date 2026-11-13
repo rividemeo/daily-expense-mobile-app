@@ -7,7 +7,6 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { Colors } from '@/shared/constants/colors';
 import { Space } from '@/shared/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
@@ -22,13 +21,13 @@ interface ProgressBarProps {
 
 export function ProgressBar({
   progress,
-  height = 8,
+  height = 6,
   showLabel = false,
   label,
   style,
   animated = true,
 }: ProgressBarProps) {
-  const { colors } = useTheme();
+  const { colors, sys } = useTheme();
   const clampedProgress = Math.min(Math.max(progress, 0), 1);
   const width = useSharedValue(0);
 
@@ -47,14 +46,8 @@ export function ProgressBar({
     width: `${width.value}%`,
   }));
 
-  const color =
-    clampedProgress >= 1
-      ? Colors.error.main
-      : clampedProgress >= 0.8
-      ? Colors.warning.main
-      : clampedProgress >= 0.5
-      ? Colors.warning.light
-      : Colors.success.main;
+  // iOS system fills: green, orange near the limit, red over it.
+  const color = clampedProgress >= 1 ? sys.red : clampedProgress >= 0.8 ? sys.orange : sys.green;
 
   return (
     <View style={style}>

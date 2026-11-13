@@ -1,7 +1,9 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
-import { TextInput, HelperText } from 'react-native-paper';
-import { Radius, Type, Space } from '@/shared/constants/theme';
+import { StyleSheet, View, ViewStyle, TextInput, Pressable } from 'react-native';
+import { Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Radius, Type, Space, TOUCH } from '@/shared/constants/theme';
+import { useTheme } from '@/hooks/useTheme';
 
 interface InputProps {
   label: string;
@@ -22,6 +24,7 @@ interface InputProps {
   maxLength?: number;
 }
 
+// iOS form field: small gray label above a white rounded field, red note below on error.
 export function Input({
   label,
   value,
@@ -40,53 +43,62 @@ export function Input({
   autoCapitalize,
   maxLength,
 }: InputProps) {
+  const { colors, sys, accent } = useTheme();
   return (
     <View style={style}>
-      <TextInput
-        label={label}
-        value={value}
-        onChangeText={onChangeText}
-        error={!!error}
-        placeholder={placeholder}
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        numberOfLines={numberOfLines}
-        left={leftIcon ? <TextInput.Icon icon={leftIcon} /> : undefined}
-        right={
-          rightIcon ? (
-            <TextInput.Icon
-              icon={rightIcon}
-              onPress={onRightIconPress}
-              accessibilityLabel={rightIcon.startsWith('eye') ? 'Show or hide text' : rightIcon}
-            />
-          ) : undefined
-        }
-        disabled={disabled}
-        autoCapitalize={autoCapitalize}
-        maxLength={maxLength}
-        mode="outlined"
-        style={[styles.input, multiline && { height: (numberOfLines ?? 3) * 48 }]}
-        outlineStyle={styles.outline}
-      />
-      {error ? (
-        <HelperText type="error" visible={!!error} style={styles.helperText}>
-          {error}
-        </HelperText>
-      ) : null}
+      <Text style={[styles.label, { color: colors.textSecondary }]}>{label.toUpperCase()}</Text>
+      <View
+        style={[
+          styles.field,
+          { backgroundColor: colors.surface, borderColor: error ? sys.red : 'transparent' },
+          multiline && { minHeight: (numberOfLines ?? 3) * 24 + Space.lg, alignItems: 'flex-start' },
+          disabled && { opacity: 0.5 },
+        ]}
+      >
+        {leftIcon ? <MaterialCommunityIcons name={leftIcon as any} size={20} color={colors.textTertiary} /> : null}
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder ?? label}
+          placeholderTextColor={colors.textTertiary}
+          secureTextEntry={secureTextEntry}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          editable={!disabled}
+          autoCapitalize={autoCapitalize}
+          maxLength={maxLength}
+          selectionColor={accent}
+          accessibilityLabel={label}
+          style={[styles.input, { color: colors.text }, multiline && { textAlignVertical: 'top', paddingTop: Space.md }]}
+        />
+        {rightIcon ? (
+          <Pressable
+            onPress={onRightIconPress}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={rightIcon.startsWith('eye') ? 'Show or hide text' : rightIcon}
+          >
+            <MaterialCommunityIcons name={rightIcon as any} size={20} color={colors.textTertiary} />
+          </Pressable>
+        ) : null}
+      </View>
+      {error ? <Text style={[styles.error, { color: sys.red }]}>{error}</Text> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  input: {
-    backgroundColor: 'transparent',
-    fontSize: Type.bodyLg.fontSize,
-  },
-  outline: {
+  label: { ...Type.footnote, marginLeft: Space.lg, marginBottom: 6 },
+  field: {
+    minHeight: TOUCH,
     borderRadius: Radius.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Space.lg,
+    gap: Space.sm,
   },
-  helperText: {
-    marginTop: -Space.xs,
-  },
+  input: { flex: 1, ...Type.bodyLg, paddingVertical: 10 },
+  error: { ...Type.footnote, marginLeft: Space.lg, marginTop: 6 },
 });

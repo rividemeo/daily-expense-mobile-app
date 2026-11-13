@@ -3,21 +3,22 @@ import {
   ScrollView,
   StyleSheet,
   View,
-  TouchableOpacity,
+  Pressable,
+  TextInput,
   Platform,
   KeyboardAvoidingView,
 } from 'react-native';
-import { Text, SegmentedButtons, Chip } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { signedAmount } from '@/shared/constants/categories';
+import { Text } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/shared/constants/colors';
 import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
-import { Input } from '@/shared/components/ui/Input';
-import { Button } from '@/shared/components/ui/Button';
+import { ListGroup } from '@/shared/components/ui/ListGroup';
+import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { CurrencyInput } from '@/shared/components/ui/CurrencyInput';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
 import { useCreateTransaction } from '@/hooks/useTransactions';
@@ -36,24 +37,42 @@ const transactionSchema = z.object({
   paymentMethod: z.enum(['cash', 'credit_card', 'debit_card', 'bank_transfer', 'digital_wallet', 'other']),
 });
 
-type TransactionForm = z.infer<typeof transactionSchema>;
+export type TransactionForm = z.infer<typeof transactionSchema>;
 
-const PAYMENT_METHODS: { value: PaymentMethod; label: string; icon: string }[] = [
-  { value: 'cash', label: 'Cash', icon: 'cash' },
-  { value: 'credit_card', label: 'Credit', icon: 'credit-card' },
-  { value: 'debit_card', label: 'Debit', icon: 'credit-card-outline' },
-  { value: 'bank_transfer', label: 'Bank', icon: 'bank-transfer' },
-  { value: 'digital_wallet', label: 'Wallet', icon: 'wallet' },
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: 'cash', label: 'Cash' },
+  { value: 'credit_card', label: 'Credit' },
+  { value: 'debit_card', label: 'Debit' },
+  { value: 'bank_transfer', label: 'Bank' },
+  { value: 'digital_wallet', label: 'Wallet' },
 ];
 
-export default function NewTransactionScreen() {
-  const { colors, accent, isDark } = useTheme();
-  const user = useAuthStore((s) => s.user);
-  const [type, setType] = useState<TransactionType>('expense');
-  const [tags, setTags] = useState<string[]>([]);
+interface TransactionFormScreenProps {
+  title: string;
+  saveLabel: string;
+  defaults: TransactionForm;
+  initialType?: TransactionType;
+  initialTags?: string[];
+  pending: boolean;
+  onSave: (data: TransactionForm, type: TransactionType, tags: string[]) => void;
+}
+
+// Shared iOS modal form used by both the new and edit transaction routes.
+export function TransactionFormScreen({
+  title,
+  saveLabel,
+  defaults,
+  initialType = 'expense',
+  initialTags = [],
+  pending,
+  onSave,
+}: TransactionFormScreenProps) {
+  const { colors, accent, sys } = useTheme();
+  const currency = useAuthStore((s) => s.user?.currency);
+  const [type, setType] = useState<TransactionType>(initialType);
+  const [tags, setTags] = useState<string[]>(initialTags);
   const [tagInput, setTagInput] = useState('');
   const getCategoriesByType = useCategoryStore((s) => s.getCategoriesByType);
-  const createTransaction = useCreateTransaction();
 
   const categories = getCategoriesByType(type);
 
@@ -63,38 +82,10 @@ export default function NewTransactionScreen() {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<TransactionForm>({
-    resolver: zodResolver(transactionSchema),
-    defaultValues: {
-      amount: '',
-      description: '',
-      categoryId: '',
-      date: formatDateInput(new Date()),
-      notes: '',
-      paymentMethod: 'cash',
-    },
-  });
+  } = useForm<TransactionForm>({ resolver: zodResolver(transactionSchema), defaultValues: defaults });
 
   const selectedCategoryId = watch('categoryId');
   const selectedPaymentMethod = watch('paymentMethod');
-
-  const onSubmit = (data: TransactionForm) => {
-    createTransaction.mutate(
-      {
-        amount: parseFloat(data.amount),
-        type,
-        categoryId: data.categoryId,
-        description: data.description,
-        date: data.date,
-        tags,
-        paymentMethod: data.paymentMethod,
-        notes: data.notes,
-        userId: user?.id ?? '',
-        isRecurring: false,
-      },
-      { onSuccess: () => router.back() }
-    );
-  };
 
   const addTag = () => {
     const trimmed = tagInput.trim().toLowerCase().replace(/\s+/g, '_');
@@ -104,306 +95,260 @@ export default function NewTransactionScreen() {
     setTagInput('');
   };
 
+  const error = (msg?: string) => (msg ? <Text style={[styles.error, { color: sys.red }]}>{msg}</Text> : null);
+  const inputStyle = [styles.textRow, { color: colors.text }];
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={[styles.closeBtn, { backgroundColor: colors.surfaceAlt }]}
+      <View style={styles.bar}>
+        <Pressable onPress={() => router.back()} style={styles.barBtn} accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={8}>
+          <Text style={[Type.bodyLg, { color: accent }]}>Cancel</Text>
+        </Pressable>
+        <Text style={[styles.barTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+        <Pressable
+          onPress={handleSubmit((data) => onSave(data, type, tags))}
+          disabled={pending}
+          style={[styles.barBtn, styles.barRight]}
           accessibilityRole="button"
-          accessibilityLabel="Close"
+          accessibilityLabel={saveLabel}
+          accessibilityState={{ disabled: pending }}
+          hitSlop={8}
         >
-          <MaterialCommunityIcons name="close" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>New Transaction</Text>
-        <View style={{ width: TOUCH }} />
+          <Text style={[Type.title, { color: pending ? colors.textTertiary : accent }]}>{saveLabel}</Text>
+        </Pressable>
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Type Toggle */}
-          <SegmentedButtons
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <SegmentedControl
             value={type}
-            onValueChange={(v) => {
-              setType(v as TransactionType);
+            onChange={(v) => {
+              setType(v);
               setValue('categoryId', '');
             }}
-            buttons={[
-              {
-                value: 'expense',
-                label: 'Expense',
-                icon: 'arrow-up-circle',
-                checkedColor: Colors.white,
-                uncheckedColor: colors.textSecondary,
-                style: type === 'expense'
-                  ? { backgroundColor: Colors.expense }
-                  : { backgroundColor: colors.surfaceAlt },
-              },
-              {
-                value: 'income',
-                label: 'Income',
-                icon: 'arrow-down-circle',
-                checkedColor: Colors.white,
-                uncheckedColor: colors.textSecondary,
-                style: type === 'income'
-                  ? { backgroundColor: Colors.income }
-                  : { backgroundColor: colors.surfaceAlt },
-              },
+            options={[
+              { value: 'expense', label: 'Expense' },
+              { value: 'income', label: 'Income' },
             ]}
-            style={styles.typeToggle}
+            style={styles.segment}
           />
 
-          {/* Amount */}
           <Controller
             control={control}
             name="amount"
             render={({ field: { onChange, value } }) => (
-              <CurrencyInput
-                value={value}
-                onChangeValue={onChange}
-                currency={user?.currency}
-                error={errors.amount?.message}
-                style={styles.amountInput}
-              />
+              <CurrencyInput large value={value} onChangeValue={onChange} currency={currency} error={errors.amount?.message} style={styles.amount} />
             )}
           />
 
-          {/* Description */}
-          <Controller
-            control={control}
-            name="description"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Description"
-                value={value}
-                onChangeText={onChange}
-                leftIcon="text"
-                error={errors.description?.message}
-                style={styles.field}
+          <View>
+            <ListGroup>
+              <Controller
+                control={control}
+                name="description"
+                render={({ field: { onChange, value } }) => (
+                  <TextInput
+                    value={value}
+                    onChangeText={onChange}
+                    placeholder="Description"
+                    placeholderTextColor={colors.textTertiary}
+                    accessibilityLabel="Description"
+                    maxLength={100}
+                    style={inputStyle}
+                  />
+                )}
               />
-            )}
-          />
-
-          {/* Category */}
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Category</Text>
-          {errors.categoryId && (
-            <Text style={[styles.fieldError, { color: isDark ? Colors.error.light : Colors.error.main }]}>{errors.categoryId.message}</Text>
-          )}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesRow}
-          >
-            {categories.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.categoryChip,
-                  { borderColor: colors.border },
-                  selectedCategoryId === cat.id && {
-                    backgroundColor: cat.color + '1F',
-                    borderColor: cat.color,
-                  },
-                ]}
-                onPress={() => setValue('categoryId', cat.id, { shouldValidate: true })}
-                accessibilityRole="button"
-                accessibilityLabel={cat.name}
-              >
-                <CategoryIcon icon={cat.icon} color={cat.color} size={28} />
-                <Text
-                  style={[
-                    styles.categoryChipLabel,
-                    { color: selectedCategoryId === cat.id ? cat.color : colors.text },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* Date */}
-          <Controller
-            control={control}
-            name="date"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Date"
-                value={value}
-                onChangeText={onChange}
-                leftIcon="calendar"
-                style={styles.field}
-              />
-            )}
-          />
-
-          {/* Payment Method */}
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Payment Method</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.paymentRow}>
-            {PAYMENT_METHODS.map((pm) => (
-              <TouchableOpacity
-                key={pm.value}
-                style={[
-                  styles.paymentChip,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                  selectedPaymentMethod === pm.value && {
-                    backgroundColor: accent + '1F',
-                    borderColor: accent,
-                  },
-                ]}
-                onPress={() => setValue('paymentMethod', pm.value)}
-                accessibilityRole="button"
-                accessibilityLabel={pm.label}
-              >
-                <MaterialCommunityIcons
-                  name={pm.icon as any}
-                  size={20}
-                  color={selectedPaymentMethod === pm.value ? accent : colors.textSecondary}
+              <View style={styles.row}>
+                <Text style={[Type.bodyLg, { color: colors.text }]}>Date</Text>
+                <Controller
+                  control={control}
+                  name="date"
+                  render={({ field: { onChange, value } }) => (
+                    <TextInput
+                      value={value}
+                      onChangeText={onChange}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor={colors.textTertiary}
+                      accessibilityLabel="Date"
+                      style={[styles.rowValue, { color: colors.textSecondary }]}
+                    />
+                  )}
                 />
-                <Text
-                  style={[
-                    styles.paymentLabel,
-                    { color: selectedPaymentMethod === pm.value ? accent : colors.textSecondary },
-                  ]}
-                >
-                  {pm.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* Tags */}
-          <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Tags</Text>
-          <View style={styles.tagInputRow}>
-            <Input
-              label="Add tag"
-              value={tagInput}
-              onChangeText={setTagInput}
-              style={styles.tagInput}
-            />
-            <TouchableOpacity
-              onPress={addTag}
-              style={[styles.tagAddBtn, { borderColor: accent }]}
-              accessibilityRole="button"
-              accessibilityLabel="Add tag"
-            >
-              <MaterialCommunityIcons name="plus" size={22} color={accent} />
-            </TouchableOpacity>
+              </View>
+            </ListGroup>
+            {error(errors.description?.message)}
           </View>
-          {tags.length > 0 && (
-            <View style={styles.tagsList}>
-              {tags.map((tag) => (
-                <Chip
-                  key={tag}
-                  onClose={() => setTags(tags.filter((t) => t !== tag))}
-                  style={[styles.tagChip, { backgroundColor: colors.surfaceAlt }]}
-                  compact
-                >
-                  #{tag}
-                </Chip>
+
+          <View>
+            <ListGroup header="Category">
+              <View style={styles.catGrid}>
+                {categories.map((cat) => {
+                  const on = selectedCategoryId === cat.id;
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      style={styles.catCell}
+                      onPress={() => setValue('categoryId', cat.id, { shouldValidate: true })}
+                      accessibilityRole="button"
+                      accessibilityLabel={cat.name}
+                      accessibilityState={{ selected: on }}
+                    >
+                      <View style={[styles.ring, { borderColor: on ? accent : 'transparent' }]}>
+                        <CategoryIcon icon={cat.icon} color={cat.color} size={44} />
+                      </View>
+                      <Text style={[Type.caption, { color: on ? accent : colors.text }]} numberOfLines={1}>
+                        {cat.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ListGroup>
+            {error(errors.categoryId?.message)}
+          </View>
+
+          <ListGroup header="Payment Method">
+            <View style={styles.capsules}>
+              {PAYMENT_METHODS.map((pm) => (
+                <Capsule
+                  key={pm.value}
+                  label={pm.label}
+                  selected={selectedPaymentMethod === pm.value}
+                  onPress={() => setValue('paymentMethod', pm.value)}
+                />
               ))}
             </View>
-          )}
+          </ListGroup>
 
-          {/* Notes */}
-          <Controller
-            control={control}
-            name="notes"
-            render={({ field: { onChange, value } }) => (
-              <Input
-                label="Notes (optional)"
-                value={value ?? ''}
-                onChangeText={onChange}
-                multiline
-                numberOfLines={3}
-                leftIcon="note-text-outline"
-                style={styles.field}
+          <ListGroup header="Tags">
+            <View style={styles.row}>
+              <TextInput
+                value={tagInput}
+                onChangeText={setTagInput}
+                onSubmitEditing={addTag}
+                placeholder="Add tag"
+                placeholderTextColor={colors.textTertiary}
+                accessibilityLabel="Add tag"
+                returnKeyType="done"
+                style={[styles.flex, Type.bodyLg, { color: colors.text }]}
               />
+              <Pressable onPress={addTag} accessibilityRole="button" accessibilityLabel="Add tag" hitSlop={10}>
+                <Ionicons name="add-circle" size={26} color={tagInput.trim() ? accent : colors.textTertiary} />
+              </Pressable>
+            </View>
+            {tags.length > 0 && (
+              <View style={styles.capsules}>
+                {tags.map((tag) => (
+                  <Capsule key={tag} label={`#${tag}`} onPress={() => setTags(tags.filter((t) => t !== tag))} removable />
+                ))}
+              </View>
             )}
-          />
+          </ListGroup>
 
-          <Button
-            onPress={handleSubmit(onSubmit)}
-            loading={createTransaction.isPending}
-            fullWidth
-            size="large"
-            style={styles.submitBtn}
-            color={type === 'expense' ? 'error' : 'success'}
-          >
-            {type === 'expense' ? 'Record Expense' : 'Record Income'}
-          </Button>
+          <ListGroup>
+            <Controller
+              control={control}
+              name="notes"
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  value={value ?? ''}
+                  onChangeText={onChange}
+                  placeholder="Notes"
+                  placeholderTextColor={colors.textTertiary}
+                  accessibilityLabel="Notes"
+                  multiline
+                  style={[inputStyle, styles.notes]}
+                />
+              )}
+            />
+          </ListGroup>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+function Capsule({ label, selected, removable, onPress }: { label: string; selected?: boolean; removable?: boolean; onPress: () => void }) {
+  const { colors, accent } = useTheme();
+  const fg = selected ? '#FFFFFF' : colors.text;
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={removable ? `Remove ${label}` : label}
+      accessibilityState={{ selected: !!selected }}
+      style={({ pressed }) => [styles.capsule, { backgroundColor: selected ? accent : colors.surfaceAlt, opacity: pressed ? 0.6 : 1 }]}
+    >
+      <Text style={[Type.body, { color: fg, fontWeight: selected ? '600' : '400' }]}>{label}</Text>
+      {removable ? <Ionicons name="close" size={14} color={colors.textSecondary} /> : null}
+    </Pressable>
+  );
+}
+
+export default function NewTransactionScreen() {
+  const user = useAuthStore((s) => s.user);
+  const createTransaction = useCreateTransaction();
+
+  return (
+    <TransactionFormScreen
+      title="New Transaction"
+      saveLabel="Add"
+      pending={createTransaction.isPending}
+      defaults={{
+        amount: '',
+        description: '',
+        categoryId: '',
+        date: formatDateInput(new Date()),
+        notes: '',
+        paymentMethod: 'cash',
+      }}
+      onSave={(data, type, tags) =>
+        createTransaction.mutate(
+          {
+            amount: signedAmount(parseFloat(data.amount), data.categoryId),
+            type,
+            categoryId: data.categoryId,
+            description: data.description,
+            date: data.date,
+            tags,
+            paymentMethod: data.paymentMethod,
+            notes: data.notes,
+            userId: user?.id ?? '',
+            isRecurring: false,
+          },
+          { onSuccess: () => router.back() }
+        )
+      }
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  header: {
+  bar: { height: TOUCH + 4, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Space.lg },
+  barBtn: { minWidth: 70, minHeight: TOUCH, justifyContent: 'center' },
+  barRight: { alignItems: 'flex-end' },
+  barTitle: { ...Type.title, flex: 1, textAlign: 'center' },
+  content: { paddingTop: Space.sm, paddingBottom: Space.xxl, gap: Space.xl },
+  segment: { marginHorizontal: Space.lg },
+  amount: { paddingHorizontal: Space.lg, paddingVertical: Space.sm },
+  error: { ...Type.footnote, marginHorizontal: Space.xxl, marginTop: 6 },
+  textRow: { ...Type.bodyLg, minHeight: TOUCH, paddingHorizontal: Space.lg, paddingVertical: 11 },
+  notes: { minHeight: 88, textAlignVertical: 'top' },
+  row: { minHeight: TOUCH, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Space.lg, gap: Space.md },
+  rowValue: { ...Type.bodyLg, flex: 1, textAlign: 'right', paddingVertical: 11 },
+  catGrid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: Space.md, paddingHorizontal: Space.xs },
+  catCell: { width: '25%', alignItems: 'center', gap: Space.xs, paddingVertical: Space.xs, paddingHorizontal: 2 },
+  ring: { padding: 2, borderWidth: 2.5, borderRadius: Radius.pill },
+  capsules: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm, padding: Space.md },
+  capsule: {
+    height: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Space.lg,
-    paddingVertical: Space.md,
-  },
-  closeBtn: {
-    width: TOUCH,
-    height: TOUCH,
+    gap: 4,
+    paddingHorizontal: 14,
     borderRadius: Radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  headerTitle: { ...Type.title, fontWeight: '700' },
-  content: { padding: Space.lg, gap: Space.lg, paddingBottom: Space.xxl + Space.sm },
-  typeToggle: { borderRadius: Radius.md },
-  amountInput: {},
-  field: {},
-  fieldLabel: { ...Type.body, fontWeight: '600', marginBottom: Space.sm },
-  fieldError: { ...Type.caption, marginTop: -Space.sm, marginBottom: Space.xs },
-  categoriesRow: { gap: Space.sm, paddingBottom: Space.xs },
-  categoryChip: {
-    alignItems: 'center',
-    padding: Space.sm,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    width: 72,
-    gap: Space.xs,
-  },
-  categoryChipLabel: { ...Type.caption, textAlign: 'center', fontWeight: '500' },
-  paymentRow: { gap: Space.sm, paddingBottom: Space.xs },
-  paymentChip: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: Space.md,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    gap: Space.xs,
-    minWidth: 72,
-  },
-  paymentLabel: { ...Type.caption, fontWeight: '500' },
-  tagInputRow: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
-  tagInput: { flex: 1 },
-  tagAddBtn: {
-    width: TOUCH,
-    height: TOUCH,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Space.xs,
-  },
-  tagsList: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm },
-  tagChip: {},
-  submitBtn: {},
 });

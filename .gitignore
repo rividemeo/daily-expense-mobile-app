@@ -27,3 +27,5 @@ expo-env.d.ts
 *.csv
 *.xlsx
 imports/
+*.apk
+apk/

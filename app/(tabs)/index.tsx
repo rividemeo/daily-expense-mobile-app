@@ -1,25 +1,20 @@
 import React, { useCallback } from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  RefreshControl,
-  TouchableOpacity,
-} from 'react-native';
+import { ScrollView, StyleSheet, View, RefreshControl, Pressable } from 'react-native';
 import { Text } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useQueryClient } from '@tanstack/react-query';
-import { Colors } from '@/shared/constants/colors';
 import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { BalanceCard } from '@/features/dashboard/components/BalanceCard';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
-import { TransactionItem } from '@/features/transactions/components/TransactionItem';
+import { TransactionItem, TX_ROW_INSET } from '@/features/transactions/components/TransactionItem';
 import { TransactionSkeleton, Skeleton } from '@/shared/components/ui/Skeleton';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
-import { FAB } from '@/shared/components/ui/FAB';
+import { LargeTitle, HeaderButton } from '@/shared/components/ui/LargeTitle';
+import { ListGroup } from '@/shared/components/ui/ListGroup';
+import { ProgressBar } from '@/shared/components/ui/ProgressBar';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useTransactionsQuery, useMonthlyStats } from '@/hooks/useTransactions';
@@ -29,10 +24,10 @@ import { useTheme } from '@/hooks/useTheme';
 
 export default function DashboardScreen() {
   const user = useAuthStore((s) => s.user);
-  const { colors, accent, isDark } = useTheme();
+  const { colors, sys, accent, isDark } = useTheme();
   const queryClient = useQueryClient();
 
-  const { data: transactions, isLoading: txLoading, refetch: refetchTx } = useTransactionsQuery({ pageSize: 5 });
+  const { data: transactions, isLoading: txLoading } = useTransactionsQuery({ pageSize: 5 });
   const { data: stats, isLoading: statsLoading } = useMonthlyStats();
   const { data: budgets } = useBudgetsQuery();
 
@@ -49,7 +44,6 @@ export default function DashboardScreen() {
   const budgetUsage = totalBudget > 0 ? totalSpent / totalBudget : 0;
 
   const currency = user?.currency ?? 'IDR';
-  const now = new Date().toISOString();
 
   const [refreshing, setRefreshing] = React.useState(false);
   const onRefresh = useCallback(async () => {
@@ -62,151 +56,102 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }, [queryClient]);
 
+  const sectionHeader = (title: string, onSeeAll: () => void) => (
+    <View style={styles.sectionHeader}>
+      <Text style={[Type.title3, { color: colors.text }]}>{title}</Text>
+      <Pressable onPress={onSeeAll} style={styles.seeAll} accessibilityRole="button" accessibilityLabel={`See all ${title}`}>
+        <Text style={[Type.bodyLg, { color: accent }]}>See All</Text>
+      </Pressable>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.greeting, { color: colors.textSecondary }]}>
-            {getGreeting()}, {user?.name?.split(' ')[0] ?? 'there'}
-          </Text>
-          <Text style={[styles.month, { color: colors.text }]}>
-            {formatMonthYear(now)}
-          </Text>
-        </View>
-        <View style={styles.headerActions}>
-          {!isOnline && (
-            <View
-              style={[
-                styles.offlineBadge,
-                { backgroundColor: isDark ? 'rgba(251,191,36,0.12)' : Colors.warning.background },
-              ]}
-              accessibilityLabel="Offline"
+      <LargeTitle
+        title="Summary"
+        subtitle={formatMonthYear(new Date().toISOString())}
+        right={
+          <>
+            {!isOnline && (
+              <Ionicons name="cloud-offline-outline" size={18} color={sys.orange} accessibilityLabel="Offline" />
+            )}
+            <HeaderButton icon="add" label="Add transaction" onPress={() => router.push('/transaction/new')} />
+            <Pressable
+              onPress={() => router.push('/profile')}
+              style={styles.avatarHit}
+              accessibilityRole="button"
+              accessibilityLabel="Profile"
             >
-              <MaterialCommunityIcons
-                name="wifi-off"
-                size={14}
-                color={isDark ? Colors.warning.light : Colors.warning.main}
-              />
-            </View>
-          )}
-          <TouchableOpacity
-            onPress={() => router.push('/profile')}
-            style={styles.avatar}
-            accessibilityRole="button"
-            accessibilityLabel="Profile"
-          >
-            <Text style={styles.avatarText}>
-              {(user?.name ?? 'U').charAt(0).toUpperCase()}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+              <View style={[styles.avatar, { backgroundColor: sys.blue }]}>
+                <Text style={styles.avatarText}>{(user?.name ?? 'U').charAt(0).toUpperCase()}</Text>
+              </View>
+            </Pressable>
+          </>
+        }
+      />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={accent}
-            colors={[accent]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={accent} colors={[accent]} />
         }
       >
-        {/* Balance Card */}
         {statsLoading ? (
           <View style={styles.balanceSkeleton}>
             <Skeleton height={160} borderRadius={Radius.lg} />
           </View>
         ) : (
-          <BalanceCard
-            balance={balance}
-            monthlyIncome={monthlyIncome}
-            monthlyExpenses={monthlyExpenses}
-            onAddPress={() => router.push('/transaction/new')}
-          />
+          <BalanceCard balance={balance} monthlyIncome={monthlyIncome} monthlyExpenses={monthlyExpenses} />
         )}
 
-        {/* Quick Stats */}
-        <View style={styles.sectionSpacer} />
-        <QuickStats
-          savings={savings}
-          savingsRate={savingsRate}
-          budgetUsage={budgetUsage}
-          currency={currency}
-        />
+        <View style={styles.gap} />
+        <QuickStats savings={savings} savingsRate={savingsRate} budgetUsage={budgetUsage} currency={currency} />
 
-        {/* Budget Overview */}
         {budgets && budgets.length > 0 && (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Budget Overview</Text>
-              <TouchableOpacity
-                onPress={() => router.push('/(tabs)/budgets')}
-                style={styles.seeAllButton}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.seeAll, { color: accent }]}>See all</Text>
-              </TouchableOpacity>
-            </View>
-            {budgets.slice(0, 3).map((budget) => {
-              const pct = budget.amount > 0 ? budget.spent / budget.amount : 0;
-              const barColor =
-                pct >= 1 ? Colors.error.main : pct >= 0.8 ? Colors.warning.main : Colors.success.main;
-              return (
-                <View key={budget.id} style={[styles.budgetItem, { backgroundColor: colors.surface }]}>
-                  <View style={styles.budgetHeader}>
-                    <Text style={[styles.budgetName, { color: colors.text }]}>{budget.name}</Text>
-                    <Text style={[styles.budgetAmt, { color: barColor }]}>
-                      {Math.round(pct * 100)}%
-                    </Text>
+            {sectionHeader('Budgets', () => router.push('/(tabs)/budgets'))}
+            <ListGroup>
+              {budgets.slice(0, 3).map((budget) => {
+                const pct = budget.amount > 0 ? budget.spent / budget.amount : 0;
+                const pctColor = pct >= 1 ? sys.red : pct >= 0.8 ? sys.orange : sys.green;
+                return (
+                  <View key={budget.id} style={styles.budgetRow}>
+                    <View style={styles.budgetHeader}>
+                      <Text style={[Type.bodyLg, styles.budgetName, { color: colors.text }]} numberOfLines={1}>
+                        {budget.name}
+                      </Text>
+                      <Text style={[Type.body, { color: pctColor, fontWeight: '600' }]}>{Math.round(pct * 100)}%</Text>
+                    </View>
+                    <ProgressBar progress={pct} height={5} />
                   </View>
-                  <View style={[styles.budgetBar, { backgroundColor: colors.track }]}>
-                    <View
-                      style={[
-                        styles.budgetFill,
-                        { width: `${Math.min(pct * 100, 100)}%`, backgroundColor: barColor },
-                      ]}
-                    />
-                  </View>
-                </View>
-              );
-            })}
+                );
+              })}
+            </ListGroup>
           </>
         )}
 
-        {/* Recent Transactions */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Transactions</Text>
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/transactions')}
-            style={styles.seeAllButton}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.seeAll, { color: accent }]}>See all</Text>
-          </TouchableOpacity>
-        </View>
-
+        {sectionHeader('Recent Transactions', () => router.push('/(tabs)/transactions'))}
         {txLoading ? (
-          <>
+          <ListGroup separatorInset={TX_ROW_INSET}>
             {[1, 2, 3, 4, 5].map((i) => (
               <TransactionSkeleton key={i} />
             ))}
-          </>
+          </ListGroup>
         ) : transactions && transactions.length > 0 ? (
-          transactions.slice(0, 5).map((tx) => (
-            <TransactionItem
-              key={tx.id}
-              transaction={tx}
-              currency={currency}
-              onPress={() => router.push(`/transaction/${tx.id}`)}
-            />
-          ))
+          <ListGroup separatorInset={TX_ROW_INSET}>
+            {transactions.slice(0, 5).map((tx) => (
+              <TransactionItem
+                key={tx.id}
+                transaction={tx}
+                currency={currency}
+                onPress={() => router.push(`/transaction/${tx.id}`)}
+              />
+            ))}
+          </ListGroup>
         ) : (
           <EmptyState
             icon="swap-horizontal"
@@ -216,79 +161,31 @@ export default function DashboardScreen() {
             onAction={() => router.push('/transaction/new')}
           />
         )}
-
-        <View style={styles.bottomPad} />
       </ScrollView>
-
-      <FAB icon="plus" onPress={() => router.push('/transaction/new')} />
     </SafeAreaView>
   );
 }
 
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Space.lg,
-    paddingVertical: Space.md,
-  },
-  greeting: { ...Type.body, marginBottom: 2 },
-  month: { ...Type.title, fontWeight: '700' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: Space.sm },
-  offlineBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatar: {
-    width: TOUCH,
-    height: TOUCH,
-    borderRadius: TOUCH / 2,
-    backgroundColor: Colors.primary.main,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { ...Type.bodyLg, color: Colors.white, fontWeight: '600' },
+  avatarHit: { width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' },
+  avatar: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { ...Type.body, color: '#FFFFFF', fontWeight: '600' },
   scroll: { flex: 1 },
-  scrollContent: { paddingBottom: 100 },
+  scrollContent: { paddingTop: Space.sm, paddingBottom: Space.xxl },
   balanceSkeleton: { paddingHorizontal: Space.lg },
-  sectionSpacer: { height: Space.lg },
+  gap: { height: Space.lg },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    minHeight: TOUCH,
     paddingHorizontal: Space.lg,
     marginTop: Space.xl,
-    marginBottom: Space.sm,
+    marginBottom: Space.xs,
   },
-  sectionTitle: { ...Type.title },
-  seeAllButton: { minHeight: TOUCH, justifyContent: 'center', paddingLeft: Space.md },
-  seeAll: { ...Type.body, fontWeight: '500' },
-  budgetItem: {
-    marginHorizontal: Space.lg,
-    marginBottom: Space.sm,
-    borderRadius: Radius.lg,
-    padding: Space.md,
-  },
-  budgetHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Space.sm },
-  budgetName: { ...Type.body, fontWeight: '600' },
-  budgetAmt: { ...Type.body, fontWeight: '600' },
-  budgetBar: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  budgetFill: { height: 6, borderRadius: 3 },
-  bottomPad: { height: Space.xl },
+  seeAll: { minHeight: TOUCH, justifyContent: 'center', paddingLeft: Space.md },
+  budgetRow: { paddingHorizontal: Space.lg, paddingVertical: Space.md, gap: Space.sm },
+  budgetHeader: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
+  budgetName: { flex: 1 },
 });

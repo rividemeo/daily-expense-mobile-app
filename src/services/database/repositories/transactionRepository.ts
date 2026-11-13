@@ -197,3 +197,25 @@ export async function getMonthlyStats(
     totalExpenses: result?.total_expenses ?? 0,
   };
 }
+
+/** Other transactions with the same name that sit in a different category. */
+export async function countSameName(description: string, type: string, categoryId: string): Promise<number> {
+  if (Platform.OS === 'web') return 0;
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ n: number }>(
+    'SELECT COUNT(*) as n FROM transactions WHERE description = ? AND type = ? AND category_id != ?',
+    [description, type, categoryId]
+  );
+  return row?.n ?? 0;
+}
+
+/** Move every transaction with this name into one category (paybacks become negative). */
+export async function recategorizeSameName(description: string, type: string, categoryId: string): Promise<void> {
+  if (Platform.OS === 'web') return;
+  const db = await getDatabase();
+  const sign = categoryId === 'cat_payback' ? '-ABS(amount)' : 'ABS(amount)';
+  await db.runAsync(
+    `UPDATE transactions SET category_id = ?, amount = ${sign}, is_synced = 0, updated_at = ? WHERE description = ? AND type = ?`,
+    [categoryId, new Date().toISOString(), description, type]
+  );
+}

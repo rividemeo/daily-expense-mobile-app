@@ -18,8 +18,8 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
   const { colors } = useTheme();
   return (
     <View style={styles.container}>
-      <View style={[styles.iconContainer, { backgroundColor: colors.surfaceAlt }]}>
-        <MaterialCommunityIcons name={icon as any} size={48} color={colors.textTertiary} />
+      <View style={styles.iconContainer}>
+        <MaterialCommunityIcons name={icon as any} size={56} color={colors.textTertiary} />
       </View>
       <Text variant="titleMedium" style={[styles.title, { color: colors.text }]}>
         {title}
@@ -44,15 +44,10 @@ const styles = StyleSheet.create({
     padding: Space.xxl,
   },
   iconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Space.xl,
+    marginBottom: Space.md,
   },
   title: {
-    ...Type.title,
+    ...Type.headline,
     textAlign: 'center',
     marginBottom: Space.sm,
   },

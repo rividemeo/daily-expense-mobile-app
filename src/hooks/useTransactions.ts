@@ -2,7 +2,6 @@ import { Platform } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTransactionStore } from '@/stores/transactionStore';
 import { useAuthStore } from '@/stores/authStore';
-import { transactionApi } from '@/services/api/transactionApi';
 import {
   getTransactions,
   insertTransaction,
@@ -20,23 +19,13 @@ import { getCurrentMonthRange } from '@/shared/utils/formatDate';
 
 export function useTransactionsQuery(filters: TransactionFilters = {}) {
   const user = useAuthStore((s) => s.user);
-  const isOnline = useUIStore((s) => s.isOnline);
   const storeTransactions = useTransactionStore((s) => s.transactions);
 
   // Keep query around so the return shape is consistent, but disable it on web
   const query = useQuery({
     queryKey: ['transactions', user?.id, filters],
-    queryFn: async () => {
-      if (isOnline && user) {
-        try {
-          const response = await transactionApi.getTransactions(filters);
-          return response.data.data.data;
-        } catch {
-          // fallthrough to local DB
-        }
-      }
-      return getTransactions(user?.id ?? '', filters);
-    },
+    // Offline-only app: transactions live in the phone's database, never fetched from a server.
+    queryFn: () => getTransactions(user?.id ?? '', filters),
     enabled: !!user && Platform.OS !== 'web',
     staleTime: 2 * 60 * 1000,
   });

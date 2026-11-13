@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
 import { useBudgetStore } from '@/stores/budgetStore';
-import { budgetApi } from '@/services/api/budgetApi';
 import {
   getBudgets,
   insertBudget,
@@ -13,23 +12,13 @@ import { useUIStore } from '@/stores/uiStore';
 
 export function useBudgetsQuery() {
   const user = useAuthStore((s) => s.user);
-  const isOnline = useUIStore((s) => s.isOnline);
   const { setBudgets } = useBudgetStore();
 
   return useQuery({
     queryKey: ['budgets', user?.id],
     queryFn: async () => {
-      let budgets: Budget[];
-      if (isOnline && user) {
-        try {
-          const response = await budgetApi.getBudgets();
-          budgets = response.data.data;
-        } catch {
-          budgets = await getBudgets(user?.id ?? '');
-        }
-      } else {
-        budgets = await getBudgets(user?.id ?? '');
-      }
+      // Offline-only app: budgets live in the phone's database, never fetched from a server.
+      const budgets: Budget[] = await getBudgets(user?.id ?? '');
       setBudgets(budgets);
       return budgets;
     },

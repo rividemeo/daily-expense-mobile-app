@@ -12,8 +12,10 @@ export function useTheme() {
 
   const theme = isDark ? DarkTheme : LightTheme;
   const colors = isDark ? Colors.dark : Colors.light;
-  // Accent that stays readable on the page background in both modes.
-  const accent = isDark ? Colors.primary.light : Colors.primary.main;
+  // iOS system colours for fills, icons and chart marks.
+  const sys = isDark ? Colors.sysDark : Colors.sysLight;
+  // Tint for links and buttons (systemBlue).
+  const accent = sys.blue;
 
-  return { theme, colors, accent, isDark };
+  return { theme, colors, sys, accent, isDark };
 }

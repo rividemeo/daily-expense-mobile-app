@@ -7,11 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1565C0"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.expenseflow.app",
@@ -24,7 +19,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
-        "backgroundColor": "#1565C0",
+        "backgroundColor": "#0A84FF",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "com.expenseflow.app",
@@ -43,6 +38,19 @@
     "plugins": [
       "expo-router",
       "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F2F2F7",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#000000"
+          }
+        }
+      ],
       "expo-secure-store",
       [
         "expo-sqlite",
