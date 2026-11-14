@@ -2,21 +2,24 @@
 // `main` shades are the darker "accessible" variants so text stays readable;
 // use useTheme().sys for iOS fill colours (icons, bars, chart marks).
 export const Colors = {
+  // Brand orange ramp (buttons, links, active tab, FAB).
   primary: {
-    50: '#E5F1FF',
-    100: '#CCE4FF',
-    200: '#99C9FF',
-    300: '#66AFFF',
-    400: '#3394FF',
-    500: '#0A84FF',
-    600: '#007AFF',
-    700: '#0062CC',
-    800: '#004A99',
-    900: '#003166',
-    main: '#007AFF',
-    light: '#0A84FF',
-    dark: '#0040DD',
+    50: '#FFF1EB',
+    100: '#FFE0D2',
+    200: '#FFC1A5',
+    300: '#FFA278',
+    400: '#FF844B',
+    500: '#FF6A2B',
+    600: '#F0561A',
+    700: '#C94312',
+    800: '#9A320D',
+    900: '#6B2209',
+    main: '#FF6A2B',
+    light: '#FF7A40',
+    dark: '#C94312',
   },
+  // Orange accent, purple highlight, navy for the balance card.
+  brand: { orange: '#FF6A2B', purple: '#7B3FF2', navy: '#2B2B3F' },
   success: {
     main: '#248A3D',
     light: '#30D158',
@@ -56,27 +59,27 @@ export const Colors = {
     900: '#1C1C1E',
   },
   light: {
-    background: '#F5F6F8', // soft off-white page, white cards on top
-    surface: '#FFFFFF',
-    card: '#FFFFFF',
-    surfaceAlt: '#EEEEF0', // fills: segmented track, search field, chips
+    background: '#FFFFFF', // white page, soft-gray cards on top
+    surface: '#F6F6F9',
+    card: '#F6F6F9',
+    surfaceAlt: '#EEEEF3', // fills: segmented track, search field, chips
     track: '#E5E5EA', // progress tracks, skeletons
     text: '#000000',
     textSecondary: '#6C6C70',
     textTertiary: '#8A8A8E',
-    border: '#E6E7EB', // thin card outlines
+    border: '#ECECF1', // thin card outlines
     divider: '#C6C6C8', // hairline list separator
-    pressed: '#E5E5EA', // row highlight while pressed
+    pressed: '#EAEAEF', // row highlight while pressed
     shadow: 'rgba(0,0,0,0.04)',
     overlay: 'rgba(0,0,0,0.4)',
-    hero: '#FFFFFF', // summary cards are plain white on iOS
+    hero: '#F6F6F9',
     onHero: '#000000',
     onHeroMuted: '#6C6C70',
   },
   dark: {
-    background: '#000000',
-    surface: '#1C1C1E',
-    card: '#1C1C1E',
+    background: '#111117',
+    surface: '#1E1E28',
+    card: '#1E1E28',
     surfaceAlt: '#2C2C2E',
     track: '#3A3A3C',
     text: '#FFFFFF',

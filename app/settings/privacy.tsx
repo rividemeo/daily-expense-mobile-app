@@ -1,3 +1,4 @@
+import { Colors } from '@/shared/constants/colors';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -63,7 +64,7 @@ export default function PrivacySettingsScreen() {
         <ListGroup header="Data & Privacy" separatorInset={ROW_ICON_INSET}>
           <ListRow
             icon="bar-chart"
-            iconColor={sys.blue}
+            iconColor={Colors.brand.orange}
             title="Usage Analytics"
             subtitle="Help improve ExpenseFlow with anonymous usage data"
             right={sw(analyticsEnabled, () => toggle(analyticsEnabled, setAnalyticsEnabled, 'Analytics'), 'Usage Analytics')}

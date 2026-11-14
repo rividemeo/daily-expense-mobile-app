@@ -1,3 +1,4 @@
+import { Colors } from '@/shared/constants/colors';
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -70,7 +71,7 @@ export default function ProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.avatarSection}>
-          <View style={[styles.avatar, { backgroundColor: sys.blue }]}>
+          <View style={[styles.avatar, { backgroundColor: Colors.brand.purple }]}>
             <Text style={styles.avatarText}>{(user?.name ?? 'M').charAt(0).toUpperCase()}</Text>
           </View>
           <Text style={[Type.headline, { color: colors.text }]}>{user?.name ?? 'My Account'}</Text>

@@ -1,3 +1,4 @@
+import { Colors } from '@/shared/constants/colors';
 import React from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -19,7 +20,7 @@ export function Badge({ label, variant = 'default', style }: BadgeProps) {
     variant === 'success' ? sys.green
     : variant === 'warning' ? sys.orange
     : variant === 'error' ? sys.red
-    : variant === 'info' ? sys.blue
+    : variant === 'info' ? Colors.brand.purple
     : null;
   return (
     <View style={[styles.badge, { backgroundColor: tint ? tint + '26' : colors.surfaceAlt }, style]}>

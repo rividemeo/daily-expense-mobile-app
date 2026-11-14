@@ -14,8 +14,8 @@ export function useTheme() {
   const colors = isDark ? Colors.dark : Colors.light;
   // iOS system colours for fills, icons and chart marks.
   const sys = isDark ? Colors.sysDark : Colors.sysLight;
-  // Tint for links and buttons (systemBlue).
-  const accent = sys.blue;
+  // Tint for links and buttons: brand orange.
+  const accent = Colors.brand.orange;
 
   return { theme, colors, sys, accent, isDark };
 }

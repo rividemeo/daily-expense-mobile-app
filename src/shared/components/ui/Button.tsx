@@ -1,3 +1,4 @@
+import { Colors } from '@/shared/constants/colors';
 import React from 'react';
 import { Pressable, StyleSheet, ViewStyle, ActivityIndicator, View } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -33,7 +34,7 @@ export function Button({
   color = 'primary',
 }: ButtonProps) {
   const { sys, colors } = useTheme();
-  const tint = color === 'success' ? sys.green : color === 'error' ? sys.red : color === 'warning' ? sys.orange : sys.blue;
+  const tint = color === 'success' ? sys.green : color === 'error' ? sys.red : color === 'warning' ? sys.orange : Colors.brand.orange;
   const filled = variant === 'contained';
   const fg = filled ? '#FFFFFF' : tint;
   const bg = filled ? tint : variant === 'outlined' ? colors.surfaceAlt : 'transparent';

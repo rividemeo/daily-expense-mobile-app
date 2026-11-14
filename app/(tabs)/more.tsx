@@ -1,3 +1,4 @@
+import { Colors } from '@/shared/constants/colors';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -29,7 +30,7 @@ export default function MoreScreen() {
             accessibilityLabel="Open profile"
             style={({ pressed }) => [styles.profile, pressed && { backgroundColor: colors.pressed }]}
           >
-            <View style={[styles.avatar, { backgroundColor: sys.blue }]}>
+            <View style={[styles.avatar, { backgroundColor: Colors.brand.purple }]}>
               <Text style={styles.avatarText}>{(user?.name ?? 'M').charAt(0).toUpperCase()}</Text>
             </View>
             <View style={styles.profileInfo}>
@@ -65,7 +66,7 @@ export default function MoreScreen() {
         </ListGroup>
 
         <ListGroup separatorInset={ROW_ICON_INSET}>
-          <ListRow icon="share" iconColor={sys.blue} title="Export Data" value="CSV, Excel, PDF" onPress={() => router.push('/settings/export')} />
+          <ListRow icon="share" iconColor={Colors.brand.orange} title="Export Data" value="CSV, Excel, PDF" onPress={() => router.push('/settings/export')} />
           <ListRow icon="download" iconColor={sys.green} title="Import Data" onPress={() => router.push('/settings/import')} />
         </ListGroup>
         <Text style={[Type.footnote, { color: colors.textSecondary, textAlign: 'center' }]}>

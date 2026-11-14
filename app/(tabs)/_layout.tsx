@@ -16,12 +16,13 @@ const ICONS: Record<string, { on: Icon; off: Icon; label: string }> = {
   reports: { on: 'pie-chart', off: 'pie-chart-outline', label: 'Spend analysis' },
 };
 
-// Floating dark pill with icon-only tabs and a white "+" in the middle.
-function PillTabBar({ state, navigation }: TabBarProps) {
-  const { colors, isDark } = useTheme();
+// White bar with icon-only tabs and a raised round orange "+" in the middle.
+function IconTabBar({ state, navigation }: TabBarProps) {
+  const { colors, accent, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const routes = state.routes.filter((r) => ICONS[r.name]);
   const active = state.routes[state.index]?.key;
+  const idle = isDark ? '#6E6E7A' : '#B9B9C6';
 
   const tabButton = (r: (typeof routes)[number]) => {
     const focused = r.key === active;
@@ -33,34 +34,33 @@ function PillTabBar({ state, navigation }: TabBarProps) {
         accessibilityRole="tab"
         accessibilityLabel={icon.label}
         accessibilityState={{ selected: focused }}
-        style={[styles.tab, focused && styles.tabOn]}
+        style={styles.tab}
       >
-        <Ionicons name={focused ? icon.on : icon.off} size={22} color={focused ? '#FFFFFF' : '#9A9AA0'} />
+        <Ionicons name={focused ? icon.on : icon.off} size={24} color={focused ? accent : idle} />
+        <View style={[styles.dot, { backgroundColor: focused ? accent : 'transparent' }]} />
       </Pressable>
     );
   };
 
   return (
-    <View style={[styles.bar, { backgroundColor: colors.background, paddingBottom: Math.max(insets.bottom, 12) }]}>
-      <View style={[styles.pill, isDark && styles.pillDark]}>
-        {routes.slice(0, 2).map(tabButton)}
-        <Pressable
-          onPress={() => router.push('/transaction/new')}
-          accessibilityRole="button"
-          accessibilityLabel="Add transaction"
-          style={({ pressed }) => [styles.add, { opacity: pressed ? 0.8 : 1 }]}
-        >
-          <Ionicons name="add" size={28} color="#111114" />
-        </Pressable>
-        {routes.slice(2).map(tabButton)}
-      </View>
+    <View style={[styles.bar, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 10) }]}>
+      {routes.slice(0, 2).map(tabButton)}
+      <Pressable
+        onPress={() => router.push('/transaction/new')}
+        accessibilityRole="button"
+        accessibilityLabel="Add transaction"
+        style={({ pressed }) => [styles.add, { backgroundColor: accent, shadowColor: accent, opacity: pressed ? 0.85 : 1 }]}
+      >
+        <Ionicons name="add" size={30} color="#FFFFFF" />
+      </Pressable>
+      {routes.slice(2).map(tabButton)}
     </View>
   );
 }
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: false }} tabBar={(p) => <PillTabBar {...p} />}>
+    <Tabs screenOptions={{ headerShown: false }} tabBar={(p) => <IconTabBar {...p} />}>
       <Tabs.Screen name="index" />
       <Tabs.Screen name="transactions" />
       <Tabs.Screen name="budgets" />
@@ -71,22 +71,19 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  bar: { alignItems: 'center', paddingTop: 8 },
-  pill: {
-    flexDirection: 'row',
+  bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingTop: 10, paddingHorizontal: 8, borderTopWidth: StyleSheet.hairlineWidth },
+  tab: { width: 52, height: 48, alignItems: 'center', justifyContent: 'center', gap: 3 },
+  dot: { width: 5, height: 5, borderRadius: 3 },
+  add: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: 'center',
-    gap: 6,
-    padding: 6,
-    borderRadius: 999,
-    backgroundColor: '#16161A',
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
+    justifyContent: 'center',
+    marginTop: -14,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 8,
   },
-  pillDark: { borderWidth: 1, borderColor: '#2C2C2E' },
-  tab: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
-  tabOn: { backgroundColor: '#3A3A40' },
-  add: { width: 72, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
 });

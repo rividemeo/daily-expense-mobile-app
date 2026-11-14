@@ -87,7 +87,7 @@ export default function ExportScreen() {
             <ListRow
               key={opt.value}
               icon={opt.icon}
-              iconColor={sys.blue}
+              iconColor={accent}
               title={opt.label}
               subtitle={opt.description}
               onPress={() => setFormat(opt.value)}

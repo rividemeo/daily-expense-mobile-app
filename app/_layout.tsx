@@ -1,3 +1,4 @@
+import { Colors } from '@/shared/constants/colors';
 import React, { useEffect, useCallback } from 'react';
 import { View, StatusBar } from 'react-native';
 import { Stack } from 'expo-router';
@@ -101,7 +102,7 @@ function AppContent() {
           onDismiss={hideSnackbar}
           duration={3000}
           style={{ backgroundColor: snackbar?.type === 'error' ? sys.red : '#1C1C1E', borderRadius: 12 }}
-          theme={{ colors: { inverseOnSurface: '#FFFFFF', inversePrimary: sys.blue } }}
+          theme={{ colors: { inverseOnSurface: '#FFFFFF', inversePrimary: Colors.brand.orange } }}
         >
           {snackbar?.message ?? ''}
         </Snackbar>

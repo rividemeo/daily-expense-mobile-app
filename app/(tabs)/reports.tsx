@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { BarChart, LineChart, ruleTypes, yAxisSides } from 'react-native-gifted-charts';
+import { BarChart, LineChart, PieChart, ruleTypes, yAxisSides } from 'react-native-gifted-charts';
 import { useTransactionsQuery } from '@/hooks/useTransactions';
 import { useAuthStore } from '@/stores/authStore';
 import { useCategoryStore } from '@/stores/categoryStore';
@@ -79,9 +79,9 @@ export default function ReportsScreen() {
     return keys.map((date, i) => ({
       value: Math.max(0, Math.round(days[date])), // a day with only paybacks draws no bar
       label: new Date(date).toLocaleDateString('en', { weekday: 'narrow' }),
-      frontColor: i === keys.length - 1 ? sys.blue : sys.blue + '8C',
+      frontColor: i === keys.length - 1 ? Colors.brand.purple : colors.surfaceAlt,
     }));
-  }, [expenses, sys.blue]);
+  }, [expenses, colors.surfaceAlt]);
   const weekTotal = barData.reduce((s, d) => s + d.value, 0);
 
   const lineData = useMemo(() => {
@@ -132,14 +132,28 @@ export default function ReportsScreen() {
         <View style={styles.pad}>
           <Text style={[Type.bodyLg, { color: colors.textSecondary }]}>Total spending</Text>
           <Money amount={totalExpenses} currency={currency} size={34} />
-          {categoryTotals.length > 0 && (
-            <View style={styles.stack} accessible accessibilityLabel="Share of spending by category">
-              {categoryTotals.map((c) => (
-                <View key={c.catId} style={{ flex: c.amount, backgroundColor: c.color }} />
-              ))}
-            </View>
-          )}
         </View>
+
+        {/* Pie: share per category, percentages on the bigger slices */}
+        {categoryTotals.length > 0 && (
+          <View style={styles.pie} accessible accessibilityLabel="Share of spending by category">
+            <PieChart
+              data={categoryTotals.map((c) => {
+                const pct = Math.round((c.amount / Math.max(totalExpenses, 1)) * 100);
+                return { value: c.amount, color: c.color, text: pct >= 8 ? `${pct}%` : '' };
+              })}
+              radius={Math.min(120, (width - Space.lg * 2) / 2 - 20)}
+              showText
+              textColor="#FFFFFF"
+              textSize={15}
+              fontWeight="700"
+              font="sans-serif"
+              labelsPosition="mid"
+              strokeWidth={3}
+              strokeColor={colors.background}
+            />
+          </View>
+        )}
         {categoryTotals.length > 0 && (
           <View style={styles.tiles}>
             {categoryTotals.map((c) => (
@@ -148,7 +162,7 @@ export default function ReportsScreen() {
                 onPress={() => router.push(`/category/${c.catId}`)}
                 accessibilityRole="button"
                 accessibilityLabel={`${c.name}, ${formatCurrency(c.amount, currency)}`}
-                style={({ pressed }) => [styles.tile, { backgroundColor: pressed ? colors.pressed : colors.surface, borderColor: colors.border }]}
+                style={({ pressed }) => [styles.tile, { backgroundColor: pressed ? colors.pressed : colors.surface }]}
               >
                 <View style={styles.tileHead}>
                   <MaterialCommunityIcons name={c.icon as any} size={15} color={c.color} />
@@ -201,7 +215,7 @@ export default function ReportsScreen() {
 
         {/* Last 7 days */}
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <CardHead label="Last 7 days" color={sys.blue} icon="bar-chart" />
+          <CardHead label="Last 7 days" color={Colors.brand.purple} icon="bar-chart" />
           <Text style={[Type.footnote, { color: colors.textSecondary }]}>Daily average</Text>
           <Text style={[Type.headline, { color: colors.text, marginBottom: Space.md }]}>
             {formatCurrency(weekTotal / 7, currency, { compact: true })}
@@ -223,7 +237,7 @@ export default function ReportsScreen() {
         {/* Cumulative spending */}
         {lineData.length > 1 && (
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <CardHead label="Spending over time" color={sys.red} icon="trending-up" />
+            <CardHead label="Spending over time" color={Colors.brand.orange} icon="trending-up" />
             <Text style={[Type.footnote, { color: colors.textSecondary }]}>Total spent</Text>
             <Text style={[Type.headline, { color: colors.text, marginBottom: Space.md }]}>
               {formatCurrency(totalExpenses, currency, { compact: true })}
@@ -238,10 +252,10 @@ export default function ReportsScreen() {
               curved
               areaChart
               hideDataPoints
-              color={sys.red}
+              color={Colors.brand.orange}
               thickness={2.5}
-              startFillColor={sys.red}
-              endFillColor={sys.red}
+              startFillColor={Colors.brand.orange}
+              endFillColor={Colors.brand.orange}
               startOpacity={0.25}
               endOpacity={0}
               adjustToWidth
@@ -284,9 +298,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   sep: { height: StyleSheet.hairlineWidth, marginVertical: Space.md },
   netRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stack: { flexDirection: 'row', gap: 3, height: 14, borderRadius: 7, overflow: 'hidden', marginTop: Space.md },
+  pie: { alignItems: 'center', paddingVertical: Space.sm },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.md, paddingHorizontal: Space.lg },
-  tile: { width: '47.8%', flexGrow: 1, borderWidth: 1, borderRadius: 16, padding: 14, gap: Space.sm },
+  tile: { width: '47.8%', flexGrow: 1, borderRadius: 16, padding: 14, gap: Space.sm },
   tileHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   smart: { marginHorizontal: Space.lg, borderRadius: 18, borderWidth: 1, padding: Space.lg },
 });

@@ -1,13 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 import { Text } from 'react-native-paper';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LineChart, ruleTypes } from 'react-native-gifted-charts';
 import { Space, Type, TOUCH } from '@/shared/constants/theme';
+import { Colors } from '@/shared/constants/colors';
 import { CircleButton } from '@/shared/components/ui/CircleButton';
-import { Money } from '@/shared/components/ui/Money';
 import { ListGroup } from '@/shared/components/ui/ListGroup';
 import { EmptyState } from '@/shared/components/ui/EmptyState';
 import { TransactionItem, TX_ROW_INSET } from '@/features/transactions/components/TransactionItem';
@@ -28,7 +28,7 @@ const toDate = (s: string) => {
 // One category over one payday month: total, a daily spending line, and its transactions.
 export default function CategoryScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, sys } = useTheme();
+  const { colors, sys, accent } = useTheme();
   const { width } = useWindowDimensions();
   const category = useCategoryStore((s) => s.getCategoryById)(id);
   const currency = useAuthStore((s) => s.user?.currency) ?? 'IDR';
@@ -39,12 +39,15 @@ export default function CategoryScreen() {
   const range = useMemo(() => paydayMonth(salaryDates, day), [salaryDates.join(), day]); // eslint-disable-line react-hooks/exhaustive-deps
   const isCurrent = range.endDate >= iso(new Date());
   const [search, setSearch] = useState('');
+  const [picked, setPicked] = useState<string | null>(null);
+  const stripRef = useRef<ScrollView>(null);
 
   const { data } = useTransactionsQuery({ categoryId: id, startDate: range.startDate, endDate: range.endDate, pageSize: 2000 });
   const all = data ?? [];
   const total = all.reduce((s, t) => s + t.amount, 0);
   const q = search.trim().toLowerCase();
-  const list = q ? all.filter((t) => t.description.toLowerCase().includes(q) || (t.notes ?? '').toLowerCase().includes(q)) : all;
+  const dayList = picked ? all.filter((t) => t.date.slice(0, 10) === picked) : all;
+  const list = q ? dayList.filter((t) => t.description.toLowerCase().includes(q) || (t.notes ?? '').toLowerCase().includes(q)) : dayList;
 
   // Spending per day across the month, zero on quiet days.
   const series = useMemo(() => {
@@ -58,57 +61,92 @@ export default function CategoryScreen() {
   const mid = series[Math.floor(series.length / 2)]?.date;
 
   const monthDate = new Date(range.year, range.month, 15);
+  const shiftMonth = (d: string) => {
+    setDay(toDate(d));
+    setPicked(null);
+  };
+
+  // Everything spent this month, to show this category's share.
+  const { data: monthAll } = useTransactionsQuery({ startDate: range.startDate, endDate: range.endDate, pageSize: 5000 });
+  const monthSpent = (monthAll ?? []).filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const share = monthSpent > 0 ? Math.min(100, Math.max(0, (total / monthSpent) * 100)) : 0;
+  const spentDays = new Set(all.map((t) => t.date.slice(0, 10)));
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <CircleButton icon="arrow-back" label="Back" onPress={() => router.back()} />
-        <Text style={[Type.title3, styles.flex, { color: colors.text }]} numberOfLines={1}>Category details</Text>
+        <CircleButton icon="chevron-back" label="Back" onPress={() => router.back()} />
+        <Text style={[Type.title3, styles.flex, styles.center, { color: colors.text }]} numberOfLines={1}>{category?.name ?? 'Category'}</Text>
         <CircleButton icon="create-outline" label="Edit categories" onPress={() => router.push('/categories')} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        {/* Hero: mini wallet + total */}
-        <View style={styles.hero}>
-          <View style={styles.mini}>
-            <View style={[styles.miniBack, { backgroundColor: color }]}><View style={styles.shade} /></View>
-            <View style={[styles.miniFront, { backgroundColor: color }]}>
-              <MaterialCommunityIcons name={(category?.icon ?? 'help-circle') as any} size={18} color="#FFFFFF" />
-            </View>
-          </View>
-          <View style={styles.flex}>
-            <Text style={[Type.bodyLg, { color: colors.textSecondary }]} numberOfLines={1}>{category?.name ?? 'Category'}</Text>
-            <Money amount={total} currency={currency} size={32} />
-          </View>
-        </View>
-
-        <View style={[styles.rule, { backgroundColor: colors.border }]} />
-
-        {/* Month switcher */}
-        <View style={styles.monthRow}>
-          <Text style={[Type.title, { color: colors.text }]}>
-            {monthDate.toLocaleDateString('en', { month: 'long' })}
-            <Text style={{ color: colors.textSecondary, fontWeight: '500' }}>, {range.year}</Text>
-          </Text>
-          <View style={styles.arrows}>
-            <Pressable onPress={() => setDay(toDate(addDays(range.startDate, -1)))} style={styles.arrow} accessibilityRole="button" accessibilityLabel="Previous month">
-              <Ionicons name="arrow-back" size={22} color={colors.text} />
+        {/* Month + day strip */}
+        <View style={[styles.calendar, { backgroundColor: colors.surface }]}>
+          <View style={styles.monthRow}>
+            <Pressable onPress={() => shiftMonth(addDays(range.startDate, -1))} style={styles.arrow} accessibilityRole="button" accessibilityLabel="Previous month">
+              <Ionicons name="chevron-back" size={20} color={colors.text} />
             </Pressable>
+            <Text style={[Type.title, { color: colors.text }]}>
+              {monthDate.toLocaleDateString('en', { month: 'long' })} {range.year}
+            </Text>
             <Pressable
               disabled={isCurrent}
-              onPress={() => setDay(toDate(addDays(range.endDate, 1)))}
+              onPress={() => shiftMonth(addDays(range.endDate, 1))}
               style={styles.arrow}
               accessibilityRole="button"
               accessibilityLabel="Next month"
               accessibilityState={{ disabled: isCurrent }}
             >
-              <Ionicons name="arrow-forward" size={22} color={isCurrent ? colors.textTertiary : colors.text} />
+              <Ionicons name="chevron-forward" size={20} color={isCurrent ? colors.textTertiary : colors.text} />
             </Pressable>
           </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.days}
+            ref={stripRef}
+            onContentSizeChange={() => !picked && stripRef.current?.scrollToEnd({ animated: false })}
+          >
+            {series.map(({ date }) => {
+              const on = date === picked;
+              const d = toDate(date);
+              return (
+                <Pressable
+                  key={date}
+                  onPress={() => setPicked(on ? null : date)}
+                  accessibilityRole="button"
+                  accessibilityLabel={formatShortDate(date)}
+                  accessibilityState={{ selected: on }}
+                  style={[styles.day, on && { backgroundColor: accent }]}
+                >
+                  <Text style={[styles.dayName, { color: on ? '#FFFFFF' : colors.textTertiary }]}>{d.toLocaleDateString('en', { weekday: 'narrow' })}</Text>
+                  <Text style={[styles.dayNum, { color: on ? '#FFFFFF' : colors.text }]}>{d.getDate()}</Text>
+                  <View style={[styles.dayDot, { backgroundColor: spentDays.has(date) ? (on ? '#FFFFFF' : colors.textTertiary) : 'transparent' }]} />
+                </Pressable>
+              );
+            })}
+          </ScrollView>
         </View>
-        <View style={[styles.pad, styles.spentRow]}>
-          <Money amount={Math.max(0, total)} currency={currency} size={26} />
-          <Text style={[Type.body, { color: colors.textSecondary }]}> Spent</Text>
+
+        {/* Share of the month */}
+        <View style={[styles.shareCard, { backgroundColor: colors.surface }]}>
+          <View style={styles.shareHead}>
+            <Text style={[Type.bodyLg, styles.flex, { color: colors.text }]}>
+              You have spent <Text style={{ color: accent, fontWeight: '700' }}>{formatCurrency(Math.max(0, total), currency, { compact: true })}</Text>
+              {'\n'}this month.
+            </Text>
+            <Text style={[Type.footnote, { color: colors.textTertiary }]}>{formatShortDate(range.startDate)} – {formatShortDate(range.endDate)}</Text>
+          </View>
+          <View style={[styles.shareBar, { backgroundColor: colors.background }]} accessible accessibilityLabel={`${share.toFixed(0)}% of all spending`}>
+            <View style={[styles.shareFill, { flex: Math.max(share, 0.01), backgroundColor: Colors.brand.purple }]}>
+              {share >= 22 && <Text style={styles.shareIn}>{share.toFixed(1)}%</Text>}
+            </View>
+            <View style={[styles.shareRest, { flex: Math.max(100 - share, 0.01) }]}>
+              {100 - share >= 22 && <Text style={[styles.shareOut, { color: colors.text }]}>{(100 - share).toFixed(1)}%</Text>}
+            </View>
+          </View>
+          <Text style={[Type.footnote, { color: colors.textTertiary }]}>Share of everything you spent this month</Text>
         </View>
 
         {/* Daily line */}
@@ -175,7 +213,7 @@ export default function CategoryScreen() {
             accessibilityLabel="Search transactions"
           />
         </View>
-        <Text style={[Type.title3, styles.pad, { color: colors.text }]}>Latest transactions</Text>
+        <Text style={[Type.title3, styles.pad, { color: colors.text }]}>{picked ? formatShortDate(picked) : 'Latest transactions'}</Text>
         {list.length > 0 ? (
           <ListGroup separatorInset={TX_ROW_INSET}>
             {list.map((tx) => (
@@ -183,7 +221,7 @@ export default function CategoryScreen() {
             ))}
           </ListGroup>
         ) : (
-          <EmptyState icon="receipt" title={q ? 'No matches' : 'Nothing spent here'} description={q ? 'Try another word' : 'No transactions in this month'} />
+          <EmptyState icon="receipt" title={q ? 'No matches' : 'Nothing spent here'} description={q ? 'Try another word' : picked ? 'No transactions on this day' : 'No transactions in this month'} />
         )}
       </ScrollView>
 
@@ -191,7 +229,7 @@ export default function CategoryScreen() {
       <View style={styles.footer}>
         <Pressable
           onPress={() => router.push({ pathname: '/transaction/new', params: { categoryId: id } })}
-          style={({ pressed }) => [styles.darkPill, { opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [styles.darkPill, { backgroundColor: accent, shadowColor: accent, opacity: pressed ? 0.8 : 1 }]}
           accessibilityRole="button"
           accessibilityLabel="Add a transaction in this category"
         >
@@ -218,16 +256,23 @@ const styles = StyleSheet.create({
   pad: { paddingHorizontal: Space.lg },
   header: { flexDirection: 'row', alignItems: 'center', gap: Space.md, paddingHorizontal: Space.lg, paddingVertical: Space.sm },
   content: { gap: Space.md, paddingBottom: 100 },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: Space.lg, paddingHorizontal: Space.lg, paddingVertical: Space.md },
-  mini: { width: 92, height: 66 },
-  miniBack: { position: 'absolute', top: 0, left: 0, right: 0, height: 36, borderRadius: 12, overflow: 'hidden' },
-  shade: { flex: 1, backgroundColor: 'rgba(0,0,0,0.22)' },
-  miniFront: { position: 'absolute', top: 12, left: 0, right: 0, bottom: 0, borderRadius: 12, padding: 10, justifyContent: 'center' },
+  center: { textAlign: 'center' },
+  calendar: { marginHorizontal: Space.lg, borderRadius: 20, paddingVertical: Space.sm },
+  days: { paddingHorizontal: Space.sm, gap: 4 },
+  day: { width: 42, borderRadius: 12, alignItems: 'center', paddingVertical: 8, gap: 4 },
+  dayName: { fontSize: 12 },
+  dayNum: { fontSize: 16, fontWeight: '600' },
+  dayDot: { width: 4, height: 4, borderRadius: 2 },
+  shareCard: { marginHorizontal: Space.lg, borderRadius: 20, padding: Space.lg, gap: Space.md },
+  shareHead: { flexDirection: 'row', gap: Space.md, alignItems: 'flex-start' },
+  shareBar: { flexDirection: 'row', height: 40, borderRadius: 10, overflow: 'hidden' },
+  shareFill: { borderRadius: 10, justifyContent: 'center', paddingHorizontal: Space.md },
+  shareRest: { justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: Space.md },
+  shareIn: { color: '#FFFFFF', fontWeight: '700', fontSize: 15 },
+  shareOut: { fontWeight: '700', fontSize: 15 },
   rule: { height: StyleSheet.hairlineWidth, marginHorizontal: Space.lg },
-  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Space.lg },
-  arrows: { flexDirection: 'row' },
+  monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Space.xs },
   arrow: { width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' },
-  spentRow: { flexDirection: 'row', alignItems: 'flex-end' },
   chart: { paddingHorizontal: Space.lg },
   axis: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Space.xs },
   tip: { backgroundColor: '#16161A', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8 },
@@ -239,7 +284,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#16161A',
+    backgroundColor: Colors.brand.navy,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
