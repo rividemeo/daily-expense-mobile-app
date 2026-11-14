@@ -22,7 +22,7 @@ import { useCategoryStore } from '@/stores/categoryStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useTheme } from '@/hooks/useTheme';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
-import { getCurrentMonthRange } from '@/shared/utils/formatDate';
+import { usePaydayMonth } from '@/hooks/usePayday';
 import { Budget } from '@/types/models';
 
 const budgetSchema = z.object({
@@ -53,7 +53,7 @@ export default function BudgetsScreen() {
 
   const expenseCategories = getCategoriesByType('expense');
   const currency = user?.currency ?? 'IDR';
-  const { startDate, endDate } = getCurrentMonthRange();
+  const { startDate, endDate } = usePaydayMonth(); // budgets run payday to payday
   const positive = isDark ? sys.green : '#248A3D';
 
   const {

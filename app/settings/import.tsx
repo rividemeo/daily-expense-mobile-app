@@ -121,6 +121,7 @@ export default function ImportScreen() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['monthly-stats'] }),
+      queryClient.invalidateQueries({ queryKey: ['budgets'] }),
     ]);
     setImported(preview.fresh.length);
     setStep('done');

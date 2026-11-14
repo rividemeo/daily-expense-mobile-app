@@ -8,17 +8,29 @@ import {
   deleteBudget,
 } from '@/services/database/repositories/budgetRepository';
 import { Budget } from '@/types/models';
+import { sumExpenses } from '@/services/database/repositories/transactionRepository';
+import { getWeekRange } from '@/shared/utils/formatDate';
+import { usePaydayMonth, usePaydayYear } from './usePayday';
 import { useUIStore } from '@/stores/uiStore';
 
 export function useBudgetsQuery() {
   const user = useAuthStore((s) => s.user);
   const { setBudgets } = useBudgetStore();
+  const month = usePaydayMonth();
+  const year = usePaydayYear();
 
   return useQuery({
-    queryKey: ['budgets', user?.id],
+    queryKey: ['budgets', user?.id, month.startDate, year.startDate],
     queryFn: async () => {
       // Offline-only app: budgets live in the phone's database, never fetched from a server.
-      const budgets: Budget[] = await getBudgets(user?.id ?? '');
+      // "Spent" is worked out fresh for the current period, so every payday month starts at zero.
+      const stored: Budget[] = await getBudgets(user?.id ?? '');
+      const budgets = await Promise.all(
+        stored.map(async (b) => {
+          const r = b.period === 'weekly' ? getWeekRange() : b.period === 'yearly' ? year : month;
+          return { ...b, spent: await sumExpenses(user?.id ?? '', r.startDate, r.endDate, b.categoryId) };
+        }),
+      );
       setBudgets(budgets);
       return budgets;
     },

@@ -12,7 +12,7 @@ import {
 import { Transaction } from '@/types/models';
 import { TransactionFilters } from '@/types/api';
 import { useUIStore } from '@/stores/uiStore';
-import { getCurrentMonthRange } from '@/shared/utils/formatDate';
+import { usePaydayMonth } from './usePayday';
 
 // On web, SQLite is not available — all reads come from the Zustand store.
 // On native, TanStack Query drives reads from SQLite / API.
@@ -55,18 +55,18 @@ export function useTransactionsQuery(filters: TransactionFilters = {}) {
 export function useMonthlyStats() {
   const user = useAuthStore((s) => s.user);
   const storeTransactions = useTransactionStore((s) => s.transactions);
-  const { startDate, endDate } = getCurrentMonthRange();
-  const date = new Date(startDate);
+  // "This month" is the payday month: from the salary that pays for it to the day before the next.
+  const { startDate, endDate } = usePaydayMonth();
 
   const query = useQuery({
-    queryKey: ['monthly-stats', user?.id, date.getFullYear(), date.getMonth() + 1],
-    queryFn: () => getMonthlyStats(user?.id ?? '', date.getFullYear(), date.getMonth() + 1),
+    queryKey: ['monthly-stats', user?.id, startDate, endDate],
+    queryFn: () => getMonthlyStats(user?.id ?? '', startDate, endDate),
     enabled: !!user && Platform.OS !== 'web',
     staleTime: 5 * 60 * 1000,
   });
 
   if (Platform.OS === 'web') {
-    const monthTx = storeTransactions.filter((t) => t.date >= startDate && t.date <= endDate);
+    const monthTx = storeTransactions.filter((t) => t.date.slice(0, 10) >= startDate && t.date.slice(0, 10) <= endDate);
     const totalIncome = monthTx
       .filter((t) => t.type === 'income')
       .reduce((s, t) => s + t.amount, 0);
@@ -101,6 +101,7 @@ export function useCreateTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
       showSnackbar('Transaction added', 'success');
     },
     onError: () => {
@@ -123,6 +124,7 @@ export function useUpdateTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
       showSnackbar('Transaction updated', 'success');
     },
     onError: () => {
@@ -145,6 +147,7 @@ export function useDeleteTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
       showSnackbar('Transaction deleted', 'success');
     },
     onError: () => {

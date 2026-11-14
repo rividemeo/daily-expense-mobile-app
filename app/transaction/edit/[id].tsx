@@ -38,6 +38,7 @@ export default function EditTransactionScreen() {
             await recategorizeSameName(description, type, categoryId);
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['monthly-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['budgets'] });
             router.back();
           },
         },

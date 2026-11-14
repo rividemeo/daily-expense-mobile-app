@@ -13,7 +13,8 @@ import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { useTheme } from '@/hooks/useTheme';
 import { LargeTitle } from '@/shared/components/ui/LargeTitle';
 import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
-import { getCurrentMonthRange, getWeekRange, getYearRange } from '@/shared/utils/formatDate';
+import { formatFullDate, formatShortDate, getWeekRange } from '@/shared/utils/formatDate';
+import { usePaydayMonth, usePaydayYear } from '@/hooks/usePayday';
 
 type Period = 'week' | 'month' | 'year';
 
@@ -31,8 +32,10 @@ export default function ReportsScreen() {
   const currency = user?.currency ?? 'IDR';
   const incomeText = isDark ? sys.green : Colors.income;
 
-  const range =
-    period === 'week' ? getWeekRange() : period === 'year' ? getYearRange(new Date().getFullYear()) : getCurrentMonthRange();
+  // Month and Year follow paydays (November = 30 Oct – 29 Nov); Week stays a normal week.
+  const payMonth = usePaydayMonth();
+  const payYear = usePaydayYear();
+  const range = period === 'week' ? getWeekRange() : period === 'year' ? payYear : payMonth;
   const { data: transactions } = useTransactionsQuery({
     startDate: range.startDate,
     endDate: range.endDate,
@@ -116,6 +119,11 @@ export default function ReportsScreen() {
               { value: 'year', label: 'Year' },
             ]}
           />
+          <Text style={[Type.footnote, styles.rangeText, { color: colors.textSecondary }]}>
+            {period === 'year'
+              ? `${formatFullDate(range.startDate)} – ${formatFullDate(range.endDate)}`
+              : `${formatShortDate(range.startDate)} – ${formatShortDate(range.endDate)}`}
+          </Text>
         </View>
 
         {/* Summary */}
@@ -259,6 +267,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { gap: Space.lg, paddingTop: Space.sm, paddingBottom: Space.xxl },
   pad: { paddingHorizontal: Space.lg },
+  rangeText: { textAlign: 'center', marginTop: Space.sm },
   card: { marginHorizontal: Space.lg, borderRadius: Radius.lg, padding: Space.lg, overflow: 'hidden' },
   head: { flexDirection: 'row', alignItems: 'center', gap: Space.xs, marginBottom: Space.sm },
   row: { flexDirection: 'row', gap: Space.md },

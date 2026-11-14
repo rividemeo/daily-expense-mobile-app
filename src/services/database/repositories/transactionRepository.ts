@@ -173,22 +173,21 @@ export async function getUnsyncedTransactions(userId: string): Promise<Transacti
   return rows.map(rowToTransaction);
 }
 
+/** Income and spending between two dates (inclusive): the payday month on the Summary screen. */
 export async function getMonthlyStats(
   userId: string,
-  year: number,
-  month: number
+  startDate: string,
+  endDate: string
 ): Promise<{ totalIncome: number; totalExpenses: number }> {
   if (Platform.OS === 'web') return { totalIncome: 0, totalExpenses: 0 };
   const db = await getDatabase();
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
 
   const result = await db.getFirstAsync<{ total_income: number; total_expenses: number }>(
     `SELECT
       SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
       SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses
     FROM transactions
-    WHERE user_id = ? AND date BETWEEN ? AND ?`,
+    WHERE user_id = ? AND substr(date, 1, 10) BETWEEN ? AND ?`,
     [userId, startDate, endDate]
   );
 
@@ -218,4 +217,27 @@ export async function recategorizeSameName(description: string, type: string, ca
     `UPDATE transactions SET category_id = ?, amount = ${sign}, is_synced = 0, updated_at = ? WHERE description = ? AND type = ?`,
     [categoryId, new Date().toISOString(), description, type]
   );
+}
+
+/** Days a salary arrived; they decide where each payday month starts. */
+export async function getSalaryDates(userId: string): Promise<string[]> {
+  if (Platform.OS === 'web') return [];
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<{ date: string }>(
+    "SELECT date FROM transactions WHERE user_id = ? AND type = 'income' AND category_id = 'cat_salary'",
+    [userId]
+  );
+  return rows.map((r) => r.date);
+}
+
+/** Total spent between two dates (inclusive), optionally in one category. Paybacks are negative. */
+export async function sumExpenses(userId: string, startDate: string, endDate: string, categoryId?: string): Promise<number> {
+  if (Platform.OS === 'web') return 0;
+  const db = await getDatabase();
+  const row = await db.getFirstAsync<{ total: number | null }>(
+    `SELECT SUM(amount) as total FROM transactions
+     WHERE user_id = ? AND type = 'expense' AND substr(date, 1, 10) BETWEEN ? AND ? AND (? IS NULL OR category_id = ?)`,
+    [userId, startDate, endDate, categoryId ?? null, categoryId ?? null]
+  );
+  return Math.max(0, row?.total ?? 0);
 }

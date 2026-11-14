@@ -19,11 +19,13 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { useTransactionsQuery, useMonthlyStats } from '@/hooks/useTransactions';
 import { useBudgetsQuery } from '@/hooks/useBudgets';
-import { formatMonthYear } from '@/shared/utils/formatDate';
+import { formatMonthYear, formatShortDate } from '@/shared/utils/formatDate';
+import { usePaydayMonth } from '@/hooks/usePayday';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function DashboardScreen() {
   const user = useAuthStore((s) => s.user);
+  const payMonth = usePaydayMonth(); // salary-to-salary month, e.g. November = 30 Oct – 29 Nov
   const { colors, sys, accent, isDark } = useTheme();
   const queryClient = useQueryClient();
 
@@ -71,7 +73,7 @@ export default function DashboardScreen() {
 
       <LargeTitle
         title="Summary"
-        subtitle={formatMonthYear(new Date().toISOString())}
+        subtitle={`${formatMonthYear(new Date(payMonth.year, payMonth.month, 15).toISOString())} · ${formatShortDate(payMonth.startDate)} – ${formatShortDate(payMonth.endDate)}`}
         right={
           <>
             {!isOnline && (
