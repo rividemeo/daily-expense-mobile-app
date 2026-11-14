@@ -12,9 +12,9 @@ export interface PaydayRange {
   month: number; // 0-11
 }
 
-const iso = (d: Date) =>
+export const iso = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const addDays = (s: string, n: number) => {
+export const addDays = (s: string, n: number) => {
   const [y, m, d] = s.split('-').map(Number);
   return iso(new Date(y, m - 1, d + n));
 };

@@ -19,7 +19,7 @@ export default function MoreScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <LargeTitle title="More" />
+      <LargeTitle title="More" back="Summary" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ListGroup>

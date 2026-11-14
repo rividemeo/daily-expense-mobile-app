@@ -11,7 +11,7 @@ import {
 import { signedAmount } from '@/shared/constants/categories';
 import { Text } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -289,6 +289,7 @@ function Capsule({ label, selected, removable, onPress }: { label: string; selec
 export default function NewTransactionScreen() {
   const user = useAuthStore((s) => s.user);
   const createTransaction = useCreateTransaction();
+  const { categoryId } = useLocalSearchParams<{ categoryId?: string }>();
 
   return (
     <TransactionFormScreen
@@ -298,7 +299,7 @@ export default function NewTransactionScreen() {
       defaults={{
         amount: '',
         description: '',
-        categoryId: '',
+        categoryId: categoryId ?? '', // opened from a category screen
         date: formatDateInput(new Date()),
         notes: '',
         paymentMethod: 'cash',

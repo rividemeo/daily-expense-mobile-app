@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Text } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
 import { Space, Type, TOUCH } from '@/shared/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
@@ -18,7 +17,7 @@ interface TransactionItemProps {
 }
 
 /** Separator inset for a ListGroup of these rows (lines start under the text). */
-export const TX_ROW_INSET = Space.lg + 40 + Space.md;
+export const TX_ROW_INSET = Space.lg + 44 + Space.md;
 
 // A plain row (no background of its own): put these inside a <ListGroup separatorInset={TX_ROW_INSET}>.
 export function TransactionItem({ transaction, currency, onPress }: TransactionItemProps) {
@@ -33,22 +32,26 @@ export function TransactionItem({ transaction, currency, onPress }: TransactionI
       onPress={onPress}
       accessibilityRole="button"
     >
-      <CategoryIcon icon={category?.icon ?? 'help-circle'} color={category?.color ?? sys.gray} size={40} />
+      <CategoryIcon icon={category?.icon ?? 'help-circle'} color={category?.color ?? sys.gray} size={44} />
 
       <View style={styles.details}>
         <Text style={[styles.description, { color: colors.text }]} numberOfLines={1}>
           {transaction.description}
         </Text>
         <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
-          {category?.name ?? 'Uncategorized'} · {formatTransactionDate(transaction.date)}
+          {formatTransactionDate(transaction.date)}
         </Text>
       </View>
 
-      <Text style={[styles.amount, { color: income ? (isDark ? sys.green : '#248A3D') : colors.text }]}>
-        {income ? '+' : '−'}
-        {formatCurrency(Math.abs(transaction.amount), currency)}
-      </Text>
-      {onPress ? <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} /> : null}
+      <View style={styles.right}>
+        <Text style={[styles.amount, { color: income ? (isDark ? sys.green : '#248A3D') : colors.text }]}>
+          {income ? '+' : '−'}
+          {formatCurrency(Math.abs(transaction.amount), currency)}
+        </Text>
+        <Text style={[styles.meta, { color: colors.textSecondary }]} numberOfLines={1}>
+          {category?.name ?? 'Uncategorized'}
+        </Text>
+      </View>
     </Pressable>
   );
 }
@@ -65,5 +68,6 @@ const styles = StyleSheet.create({
   details: { flex: 1 },
   description: { ...Type.bodyLg, marginBottom: 1 },
   meta: { ...Type.footnote },
+  right: { alignItems: 'flex-end', maxWidth: '45%' },
   amount: { ...Type.bodyLg, fontWeight: '600' },
 });

@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { router } from 'expo-router';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { PieChart, BarChart, LineChart, ruleTypes, yAxisSides } from 'react-native-gifted-charts';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { BarChart, LineChart, ruleTypes, yAxisSides } from 'react-native-gifted-charts';
 import { useTransactionsQuery } from '@/hooks/useTransactions';
 import { useAuthStore } from '@/stores/authStore';
 import { useCategoryStore } from '@/stores/categoryStore';
@@ -12,6 +13,7 @@ import { Space, Radius, Type } from '@/shared/constants/theme';
 import { formatCurrency } from '@/shared/utils/formatCurrency';
 import { useTheme } from '@/hooks/useTheme';
 import { LargeTitle } from '@/shared/components/ui/LargeTitle';
+import { Money } from '@/shared/components/ui/Money';
 import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { formatFullDate, formatShortDate, getWeekRange } from '@/shared/utils/formatDate';
 import { usePaydayMonth, usePaydayYear } from '@/hooks/usePayday';
@@ -53,7 +55,7 @@ export default function ReportsScreen() {
     return Array.from(map.entries())
       .map(([catId, amount], i) => {
         const cat = getCategoryById(catId);
-        return { catId, amount, name: cat?.name ?? 'Other', color: cat?.color ?? Colors.categoryColors[i % 16] };
+        return { catId, amount, name: cat?.name ?? 'Other', icon: cat?.icon ?? 'help-circle', color: cat?.color ?? Colors.categoryColors[i % 16] };
       })
       .filter((c) => c.amount > 0) // paybacks are negative: they lower the total, not a slice
       .sort((a, b) => b.amount - a.amount)
@@ -106,7 +108,7 @@ export default function ReportsScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={[styles.container, { backgroundColor: colors.background }]}>
-      <LargeTitle title="Reports" />
+      <LargeTitle title="Spend analysis" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.pad}>
@@ -125,6 +127,55 @@ export default function ReportsScreen() {
               : `${formatShortDate(range.startDate)} – ${formatShortDate(range.endDate)}`}
           </Text>
         </View>
+
+        {/* Total spending, split by category */}
+        <View style={styles.pad}>
+          <Text style={[Type.bodyLg, { color: colors.textSecondary }]}>Total spending</Text>
+          <Money amount={totalExpenses} currency={currency} size={34} />
+          {categoryTotals.length > 0 && (
+            <View style={styles.stack} accessible accessibilityLabel="Share of spending by category">
+              {categoryTotals.map((c) => (
+                <View key={c.catId} style={{ flex: c.amount, backgroundColor: c.color }} />
+              ))}
+            </View>
+          )}
+        </View>
+        {categoryTotals.length > 0 && (
+          <View style={styles.tiles}>
+            {categoryTotals.map((c) => (
+              <Pressable
+                key={c.catId}
+                onPress={() => router.push(`/category/${c.catId}`)}
+                accessibilityRole="button"
+                accessibilityLabel={`${c.name}, ${formatCurrency(c.amount, currency)}`}
+                style={({ pressed }) => [styles.tile, { backgroundColor: pressed ? colors.pressed : colors.surface, borderColor: colors.border }]}
+              >
+                <View style={styles.tileHead}>
+                  <MaterialCommunityIcons name={c.icon as any} size={15} color={c.color} />
+                  <Text style={[Type.footnote, styles.flex, { color: c.color, fontWeight: '600' }]} numberOfLines={1}>{c.name}</Text>
+                </View>
+                <Text style={[Type.title3, { color: colors.text, fontWeight: '700' }]} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatCurrency(c.amount, currency, { compact: true })}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* How imports get sorted */}
+        <Pressable
+          onPress={() => router.push('/(tabs)/transactions')}
+          accessibilityRole="button"
+          style={[styles.smart, { backgroundColor: isDark ? '#2A2412' : '#FFF8E7', borderColor: isDark ? '#3D3418' : '#F7EBC8' }]}
+        >
+          <View style={styles.head}>
+            <Ionicons name="sparkles" size={18} color={sys.orange} />
+            <Text style={[Type.title, { color: colors.text }]}>Smart category</Text>
+          </View>
+          <Text style={[Type.body, { color: colors.textSecondary }]}>
+            Imported transactions are sorted for you. Open one to change its category and the app remembers it next time.
+          </Text>
+        </Pressable>
 
         {/* Summary */}
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -168,47 +219,6 @@ export default function ReportsScreen() {
             {...rules}
           />
         </View>
-
-        {/* Spending by category */}
-        {categoryTotals.length > 0 && (
-          <View style={[styles.card, { backgroundColor: colors.surface }]}>
-            <CardHead label="Spending by category" color={sys.orange} icon="pie-chart" />
-            <View style={styles.pie}>
-              <PieChart
-                data={categoryTotals.map((c) => ({ value: c.amount, color: c.color }))}
-                donut
-                radius={88}
-                innerRadius={64}
-                strokeWidth={2}
-                strokeColor={colors.surface}
-                innerCircleColor={colors.surface}
-                centerLabelComponent={() => (
-                  <View style={{ alignItems: 'center' }}>
-                    <Text style={[Type.footnote, { color: colors.textSecondary }]}>Total</Text>
-                    <Text style={[Type.title, { color: colors.text }]}>
-                      {formatCurrency(totalExpenses, currency, { compact: true })}
-                    </Text>
-                  </View>
-                )}
-              />
-            </View>
-            {categoryTotals.map((c, i) => (
-              <View key={c.catId}>
-                {i > 0 && <View style={[styles.legendSep, { backgroundColor: colors.divider }]} />}
-                <View style={styles.legendRow}>
-                  <View style={[styles.dot, { backgroundColor: c.color }]} />
-                  <Text style={[Type.bodyLg, styles.flex, { color: colors.text }]} numberOfLines={1}>{c.name}</Text>
-                  <Text style={[Type.body, { color: colors.textSecondary }]}>
-                    {Math.round((c.amount / categoryTotals.reduce((s, x) => s + x.amount, 0)) * 100)}%
-                  </Text>
-                  <Text style={[Type.bodyLg, styles.amount, { color: colors.text }]}>
-                    {formatCurrency(c.amount, currency, { compact: true })}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
 
         {/* Cumulative spending */}
         {lineData.length > 1 && (
@@ -274,9 +284,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   sep: { height: StyleSheet.hairlineWidth, marginVertical: Space.md },
   netRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  pie: { alignItems: 'center', marginVertical: Space.md },
-  legendRow: { flexDirection: 'row', alignItems: 'center', gap: Space.sm, minHeight: 40 },
-  legendSep: { height: StyleSheet.hairlineWidth, marginLeft: 18 },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  amount: { minWidth: 72, textAlign: 'right', fontWeight: '600' },
+  stack: { flexDirection: 'row', gap: 3, height: 14, borderRadius: 7, overflow: 'hidden', marginTop: Space.md },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.md, paddingHorizontal: Space.lg },
+  tile: { width: '47.8%', flexGrow: 1, borderWidth: 1, borderRadius: 16, padding: 14, gap: Space.sm },
+  tileHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  smart: { marginHorizontal: Space.lg, borderRadius: 18, borderWidth: 1, padding: Space.lg },
 });

@@ -56,7 +56,7 @@ export const Colors = {
     900: '#1C1C1E',
   },
   light: {
-    background: '#F2F2F7', // systemGroupedBackground
+    background: '#F5F6F8', // soft off-white page, white cards on top
     surface: '#FFFFFF',
     card: '#FFFFFF',
     surfaceAlt: '#EEEEF0', // fills: segmented track, search field, chips
@@ -64,7 +64,7 @@ export const Colors = {
     text: '#000000',
     textSecondary: '#6C6C70',
     textTertiary: '#8A8A8E',
-    border: '#D1D1D6',
+    border: '#E6E7EB', // thin card outlines
     divider: '#C6C6C8', // hairline list separator
     pressed: '#E5E5EA', // row highlight while pressed
     shadow: 'rgba(0,0,0,0.04)',
