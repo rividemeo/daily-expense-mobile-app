@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, ViewStyle, TextInput, Pressable } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -24,7 +24,7 @@ interface InputProps {
   maxLength?: number;
 }
 
-// iOS form field: small gray label above a white rounded field, red note below on error.
+// Form field: small label above a soft-gray rounded field; orange outline while typing, red on error.
 export function Input({
   label,
   value,
@@ -44,13 +44,14 @@ export function Input({
   maxLength,
 }: InputProps) {
   const { colors, sys, accent } = useTheme();
+  const [focused, setFocused] = useState(false);
   return (
     <View style={style}>
-      <Text style={[styles.label, { color: colors.textSecondary }]}>{label.toUpperCase()}</Text>
+      <Text style={[styles.label, { color: colors.textSecondary }]}>{label}</Text>
       <View
         style={[
           styles.field,
-          { backgroundColor: colors.surface, borderColor: error ? sys.red : 'transparent' },
+          { backgroundColor: colors.surface, borderColor: error ? sys.red : focused ? accent : 'transparent' },
           multiline && { minHeight: (numberOfLines ?? 3) * 24 + Space.lg, alignItems: 'flex-start' },
           disabled && { opacity: 0.5 },
         ]}
@@ -69,6 +70,8 @@ export function Input({
           autoCapitalize={autoCapitalize}
           maxLength={maxLength}
           selectionColor={accent}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           accessibilityLabel={label}
           style={[styles.input, { color: colors.text }, multiline && { textAlignVertical: 'top', paddingTop: Space.md }]}
         />
@@ -89,16 +92,16 @@ export function Input({
 }
 
 const styles = StyleSheet.create({
-  label: { ...Type.footnote, marginLeft: Space.lg, marginBottom: 6 },
+  label: { ...Type.footnote, fontWeight: '600', marginLeft: Space.xs, marginBottom: 6 },
   field: {
-    minHeight: TOUCH,
+    minHeight: 52,
     borderRadius: Radius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Space.lg,
     gap: Space.sm,
   },
   input: { flex: 1, ...Type.bodyLg, paddingVertical: 10 },
-  error: { ...Type.footnote, marginLeft: Space.lg, marginTop: 6 },
+  error: { ...Type.footnote, marginLeft: Space.xs, marginTop: 6 },
 });

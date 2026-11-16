@@ -4,7 +4,7 @@ import { Text } from 'react-native-paper';
 import { Space, Type } from '@/shared/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
-// iOS segmented control: gray track, white sliding pill on the selected segment.
+// Segmented control: soft-gray track, orange pill on the selected segment.
 interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (v: T) => void;
@@ -13,9 +13,9 @@ interface SegmentedControlProps<T extends string> {
 }
 
 export function SegmentedControl<T extends string>({ value, onChange, options, style }: SegmentedControlProps<T>) {
-  const { colors, isDark } = useTheme();
+  const { colors, accent } = useTheme();
   return (
-    <View style={[styles.track, { backgroundColor: colors.surfaceAlt }, style]} accessibilityRole="tablist">
+    <View style={[styles.track, { backgroundColor: colors.surface }, style]} accessibilityRole="tablist">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -25,9 +25,9 @@ export function SegmentedControl<T extends string>({ value, onChange, options, s
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
             hitSlop={{ top: 6, bottom: 6 }}
-            style={[styles.seg, on && [styles.on, { backgroundColor: isDark ? '#636366' : '#FFFFFF' }]]}
+            style={[styles.seg, on && [styles.on, { backgroundColor: accent, shadowColor: accent }]]}
           >
-            <Text style={[styles.label, { color: colors.text, fontWeight: on ? '600' : '500' }]} numberOfLines={1}>
+            <Text style={[styles.label, { color: on ? '#FFFFFF' : colors.textSecondary, fontWeight: on ? '700' : '500' }]} numberOfLines={1}>
               {o.label}
             </Text>
           </Pressable>
@@ -38,12 +38,11 @@ export function SegmentedControl<T extends string>({ value, onChange, options, s
 }
 
 const styles = StyleSheet.create({
-  track: { flexDirection: 'row', borderRadius: 9, padding: 2, height: 34 },
-  seg: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 7, paddingHorizontal: Space.sm },
+  track: { flexDirection: 'row', borderRadius: 14, padding: 4, height: 44 },
+  seg: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 10, paddingHorizontal: Space.sm },
   on: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 2,
   },

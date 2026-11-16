@@ -18,6 +18,7 @@ import { z } from 'zod';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { ListGroup } from '@/shared/components/ui/ListGroup';
+import { HeaderButton } from '@/shared/components/ui/LargeTitle';
 import { SegmentedControl } from '@/shared/components/ui/SegmentedControl';
 import { CurrencyInput } from '@/shared/components/ui/CurrencyInput';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
@@ -101,9 +102,9 @@ export function TransactionFormScreen({
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.bar}>
-        <Pressable onPress={() => router.back()} style={styles.barBtn} accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={8}>
-          <Text style={[Type.bodyLg, { color: accent }]}>Cancel</Text>
-        </Pressable>
+        <View style={styles.barBtn}>
+          <HeaderButton icon="close" label="Cancel" onPress={() => router.back()} />
+        </View>
         <Text style={[styles.barTitle, { color: colors.text }]} numberOfLines={1}>{title}</Text>
         <Pressable
           onPress={handleSubmit((data) => onSave(data, type, tags))}
@@ -114,7 +115,9 @@ export function TransactionFormScreen({
           accessibilityState={{ disabled: pending }}
           hitSlop={8}
         >
-          <Text style={[Type.title, { color: pending ? colors.textTertiary : accent }]}>{saveLabel}</Text>
+          <View style={[styles.savePill, { backgroundColor: accent, opacity: pending ? 0.4 : 1 }]}>
+            <Text style={[Type.title, { color: '#FFFFFF' }]}>{saveLabel}</Text>
+          </View>
         </Pressable>
       </View>
 
@@ -278,7 +281,7 @@ function Capsule({ label, selected, removable, onPress }: { label: string; selec
       accessibilityRole="button"
       accessibilityLabel={removable ? `Remove ${label}` : label}
       accessibilityState={{ selected: !!selected }}
-      style={({ pressed }) => [styles.capsule, { backgroundColor: selected ? accent : colors.surfaceAlt, opacity: pressed ? 0.6 : 1 }]}
+      style={({ pressed }) => [styles.capsule, { backgroundColor: selected ? accent : colors.background, opacity: pressed ? 0.6 : 1 }]}
     >
       <Text style={[Type.body, { color: fg, fontWeight: selected ? '600' : '400' }]}>{label}</Text>
       {removable ? <Ionicons name="close" size={14} color={colors.textSecondary} /> : null}
@@ -328,10 +331,11 @@ export default function NewTransactionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
-  bar: { height: TOUCH + 4, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Space.lg },
-  barBtn: { minWidth: 70, minHeight: TOUCH, justifyContent: 'center' },
+  bar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: Space.lg, paddingVertical: Space.sm },
+  barBtn: { minWidth: 80, minHeight: TOUCH, justifyContent: 'center' },
+  savePill: { height: 40, paddingHorizontal: 20, borderRadius: Radius.pill, alignItems: 'center', justifyContent: 'center' },
   barRight: { alignItems: 'flex-end' },
-  barTitle: { ...Type.title, flex: 1, textAlign: 'center' },
+  barTitle: { ...Type.title3, flex: 1, textAlign: 'center' },
   content: { paddingTop: Space.sm, paddingBottom: Space.xxl, gap: Space.xl },
   segment: { marginHorizontal: Space.lg },
   amount: { paddingHorizontal: Space.lg, paddingVertical: Space.sm },
@@ -345,7 +349,7 @@ const styles = StyleSheet.create({
   ring: { padding: 2, borderWidth: 2.5, borderRadius: Radius.pill },
   capsules: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm, padding: Space.md },
   capsule: {
-    height: 32,
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,

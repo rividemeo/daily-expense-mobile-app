@@ -4,9 +4,9 @@ import { Text } from 'react-native-paper';
 import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/shared/constants/colors';
-import { Space, Type, TOUCH } from '@/shared/constants/theme';
+import { Radius, Space, Type, TOUCH } from '@/shared/constants/theme';
 import { CategoryIcon } from '@/shared/components/ui/CategoryIcon';
-import { LargeTitle } from '@/shared/components/ui/LargeTitle';
+import { LargeTitle, HeaderButton } from '@/shared/components/ui/LargeTitle';
 import { ListGroup, ListRow } from '@/shared/components/ui/ListGroup';
 import { useTransactionStore } from '@/stores/transactionStore';
 import { useDeleteTransaction } from '@/hooks/useTransactions';
@@ -67,20 +67,12 @@ export default function TransactionDetailScreen() {
         back
         title="Transaction"
         right={
-          <Pressable
-            onPress={() => router.push(`/transaction/edit/${id}`)}
-            style={styles.edit}
-            accessibilityRole="button"
-            accessibilityLabel="Edit transaction"
-            hitSlop={8}
-          >
-            <Text style={[Type.bodyLg, { color: accent }]}>Edit</Text>
-          </Pressable>
+          <HeaderButton icon="create-outline" label="Edit transaction" onPress={() => router.push(`/transaction/edit/${id}`)} />
         }
       />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.hero}>
+        <View style={[styles.hero, { backgroundColor: colors.surface }]}>
           <CategoryIcon icon={category?.icon ?? 'help-circle'} color={category?.color ?? sys.gray} size={60} />
           <Text
             style={[styles.amount, { color: isIncome ? (isDark ? sys.green : Colors.success.main) : colors.text }]}
@@ -135,7 +127,7 @@ const styles = StyleSheet.create({
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   edit: { minHeight: TOUCH, justifyContent: 'center', paddingHorizontal: Space.sm },
   content: { paddingBottom: Space.xxl, gap: Space.xl },
-  hero: { alignItems: 'center', gap: Space.sm, paddingHorizontal: Space.xl, paddingTop: Space.lg },
+  hero: { alignItems: 'center', gap: Space.sm, marginHorizontal: Space.lg, marginTop: Space.sm, padding: Space.xl, borderRadius: Radius.xl },
   amount: { ...Type.display, fontSize: 40, lineHeight: 48 },
   center: { textAlign: 'center' },
   notes: { paddingHorizontal: Space.lg, paddingVertical: 11 },

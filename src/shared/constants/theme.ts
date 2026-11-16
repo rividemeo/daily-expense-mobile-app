@@ -3,7 +3,7 @@ import { Colors } from './colors';
 
 // iOS text styles (largeTitle, title2, headline, body, subhead, footnote, caption1).
 export const Space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
-export const Radius = { sm: 8, md: 10, lg: 12, xl: 20, pill: 999 } as const;
+export const Radius = { sm: 10, md: 14, lg: 18, xl: 24, pill: 999 } as const;
 export const Type = {
   caption: { fontSize: 12, lineHeight: 16 }, // caption1
   footnote: { fontSize: 13, lineHeight: 18 },

@@ -68,13 +68,15 @@ export function CurrencyInput({
         keyboardType="decimal-pad"
         mode="outlined"
         error={!!error}
+        outlineColor="transparent"
+        activeOutlineColor={accent}
         left={
           <TextInput.Affix
             text={currencyInfo.symbol}
             textStyle={{ ...Type.title, fontWeight: '700', color: accent }}
           />
         }
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface }]}
         outlineStyle={styles.outline}
         contentStyle={styles.content}
       />
@@ -94,7 +96,6 @@ const styles = StyleSheet.create({
   heroValue: { fontSize: 46, lineHeight: 56, fontWeight: '700', flexShrink: 1 },
   heroInput: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: 0 },
   input: {
-    backgroundColor: 'transparent',
     fontSize: Type.headline.fontSize,
     fontWeight: '700',
   },

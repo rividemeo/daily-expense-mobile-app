@@ -70,7 +70,7 @@ export default function TransactionsScreen() {
               visible={menuVisible}
               onDismiss={() => setMenuVisible(false)}
               anchor={
-                <HeaderButton icon="ellipsis-horizontal-circle" label="Filter and sort options" onPress={() => setMenuVisible(true)} />
+                <HeaderButton icon="ellipsis-horizontal" label="Filter and sort options" onPress={() => setMenuVisible(true)} />
               }
             >
               <Menu.Item onPress={() => router.push('/settings/export')} title="Export" leadingIcon="export" />
@@ -81,8 +81,8 @@ export default function TransactionsScreen() {
         }
       />
 
-      <View style={[styles.search, { backgroundColor: colors.surfaceAlt }]}>
-        <Ionicons name="search" size={17} color={colors.textTertiary} />
+      <View style={[styles.search, { backgroundColor: colors.surface }]}>
+        <Ionicons name="search" size={19} color={colors.textTertiary} />
         <TextInput
           placeholder="Search"
           placeholderTextColor={colors.textTertiary}
@@ -144,16 +144,16 @@ export default function TransactionsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   search: {
-    height: 36,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Space.sm,
     marginHorizontal: Space.lg,
-    paddingHorizontal: Space.sm,
+    paddingHorizontal: Space.lg,
     borderRadius: Radius.md,
   },
   searchInput: { flex: 1, ...Type.bodyLg, paddingVertical: 0 },
   segments: { marginHorizontal: Space.lg, marginTop: Space.md, marginBottom: Space.sm },
-  group: { marginTop: Space.xl },
+  group: { marginTop: Space.lg },
   listContent: { paddingBottom: Space.xxl },
 });

@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Space, Radius, Type, TOUCH } from '@/shared/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 
-// iOS "inset grouped" list: rounded white block, hairline separators between rows,
-// optional uppercase header and gray footer note.
+// Rounded soft-gray block with thin separators, an optional bold section title
+// above it and a gray footer note below.
 interface ListGroupProps {
   children: React.ReactNode;
   header?: string;
@@ -21,11 +21,11 @@ export function ListGroup({ children, header, footer, separatorInset = Space.lg,
   const rows = React.Children.toArray(children).filter(Boolean);
   return (
     <View style={[styles.wrap, style]}>
-      {header ? <Text style={[styles.header, { color: colors.textSecondary }]}>{header.toUpperCase()}</Text> : null}
+      {header ? <Text style={[styles.header, { color: colors.text }]}>{header}</Text> : null}
       <View style={[styles.group, { backgroundColor: colors.surface }]}>
         {rows.map((row, i) => (
           <React.Fragment key={i}>
-            {i > 0 && <View style={[styles.sep, { marginLeft: separatorInset, backgroundColor: colors.divider }]} />}
+            {i > 0 && <View style={[styles.sep, { marginLeft: separatorInset, backgroundColor: colors.border }]} />}
             {row}
           </React.Fragment>
         ))}
@@ -38,7 +38,7 @@ export function ListGroup({ children, header, footer, separatorInset = Space.lg,
 interface ListRowProps {
   title: string;
   subtitle?: string;
-  /** Ionicons name, drawn white on a coloured rounded square like iOS Settings. */
+  /** Ionicons name, drawn in its colour on a soft tinted circle. */
   icon?: keyof typeof Ionicons.glyphMap;
   iconColor?: string;
   /** Gray text on the right, e.g. the current setting. */
@@ -52,7 +52,7 @@ interface ListRowProps {
   selected?: boolean;
 }
 
-export const ROW_ICON_INSET = Space.lg + 29 + Space.md;
+export const ROW_ICON_INSET = Space.lg + 34 + Space.md;
 
 export function ListRow({ title, subtitle, icon, iconColor, value, right, onPress, selected, chevron = !!onPress && selected === undefined, destructive }: ListRowProps) {
   const { colors, sys, accent } = useTheme();
@@ -66,8 +66,8 @@ export function ListRow({ title, subtitle, icon, iconColor, value, right, onPres
       style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.pressed }]}
     >
       {icon ? (
-        <View style={[styles.icon, { backgroundColor: iconColor ?? sys.gray }]}>
-          <Ionicons name={icon} size={18} color="#FFFFFF" />
+        <View style={[styles.icon, { backgroundColor: (iconColor ?? sys.gray) + '22' }]}>
+          <Ionicons name={icon} size={18} color={iconColor ?? sys.gray} />
         </View>
       ) : null}
       <View style={styles.texts}>
@@ -86,19 +86,19 @@ export function ListRow({ title, subtitle, icon, iconColor, value, right, onPres
 
 const styles = StyleSheet.create({
   wrap: { marginHorizontal: Space.lg },
-  header: { ...Type.footnote, paddingHorizontal: Space.lg, marginBottom: 6 },
-  footer: { ...Type.footnote, paddingHorizontal: Space.lg, marginTop: 6 },
-  group: { borderRadius: Radius.md, overflow: 'hidden' },
+  header: { ...Type.title, paddingHorizontal: Space.xs, marginBottom: Space.sm },
+  footer: { ...Type.footnote, paddingHorizontal: Space.xs, marginTop: 6 },
+  group: { borderRadius: Radius.lg, overflow: 'hidden' },
   sep: { height: StyleSheet.hairlineWidth },
   row: {
     minHeight: TOUCH,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Space.lg,
-    paddingVertical: 11,
+    paddingVertical: 13,
     gap: Space.md,
   },
-  icon: { width: 29, height: 29, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   texts: { flex: 1 },
   title: { ...Type.bodyLg },
   subtitle: { ...Type.footnote, marginTop: 1 },

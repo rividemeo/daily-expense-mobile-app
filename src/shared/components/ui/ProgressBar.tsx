@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Space } from '@/shared/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
+import { Colors } from '@/shared/constants/colors';
 
 interface ProgressBarProps {
   progress: number;
@@ -21,7 +22,7 @@ interface ProgressBarProps {
 
 export function ProgressBar({
   progress,
-  height = 6,
+  height = 8,
   showLabel = false,
   label,
   style,
@@ -46,8 +47,8 @@ export function ProgressBar({
     width: `${width.value}%`,
   }));
 
-  // iOS system fills: green, orange near the limit, red over it.
-  const color = clampedProgress >= 1 ? sys.red : clampedProgress >= 0.8 ? sys.orange : sys.green;
+  // Purple while fine, orange near the limit, red over it.
+  const color = clampedProgress >= 1 ? sys.red : clampedProgress >= 0.8 ? Colors.brand.orange : Colors.brand.purple;
 
   return (
     <View style={style}>
